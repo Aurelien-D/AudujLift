@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { offToFood, rankResults } from './off'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { fetchProductByBarcode, offToFood, rankResults } from './off'
 import type { Food } from './types'
 
 describe('conversion Open Food Facts', () => {
@@ -32,5 +32,19 @@ describe('classement des résultats', () => {
   it('place en tête les produits correspondant à la recherche', () => {
     const list = [food('Fromage blanc nature'), food('Skyr nature 0%', 'Yoplait'), food('Le petit suisse'), food('Skyr', 'Siggi’s')]
     expect(rankResults('skyr', list).map((f) => f.name)).toEqual(['Skyr nature 0%', 'Skyr', 'Fromage blanc nature', 'Le petit suisse'])
+  })
+})
+
+describe('code-barres', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('un produit absent de la base (404) est « introuvable », pas une panne', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ code: '1002106824350', status: 0, status_verbose: 'product not found' }), { status: 404 }))
+    await expect(fetchProductByBarcode('1002106824350')).resolves.toBeNull()
+  })
+
+  it('une vraie panne reste une erreur', async () => {
+    vi.stubGlobal('fetch', async () => new Response('Service Unavailable', { status: 503 }))
+    await expect(fetchProductByBarcode('3017620422003')).rejects.toThrow(/indisponible \(503\)/)
   })
 })

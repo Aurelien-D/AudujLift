@@ -105,6 +105,11 @@ async function getJson(urls: string | string[], signal?: AbortSignal, attempts =
     try {
       const res = await fetch(list[i % list.length], { signal, headers: { Accept: 'application/json' } })
       if (res.ok) return await res.json()
+      // Produit inconnu : l'API répond 404 avec { status: 0 }. Ce n'est pas une panne.
+      if (res.status === 404) {
+        const body = await res.json().catch(() => null)
+        if (body) return body
+      }
       lastError = new Error(`Open Food Facts indisponible (${res.status})`)
       if (res.status < 500 && res.status !== 429) break
     } catch (e) {

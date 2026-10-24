@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ActiveWorkoutBar } from './components/ActiveWorkoutBar'
 import { BottomNav } from './components/BottomNav'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { RestTimerBar } from './components/RestTimerBar'
 import { syncDefaultExercises } from './lib/db'
 import Home from './pages/Home'
@@ -36,27 +37,29 @@ function Shell() {
   return (
     <>
       <ScrollToTop />
-      <Suspense fallback={null}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/workouts" element={<Workouts />} />
-          <Route path="/workouts/programs" element={<Programs />} />
-          <Route path="/workouts/routine/:id" element={<RoutineEditor />} />
-          <Route path="/workouts/history" element={<History />} />
-          <Route path="/workouts/history/:id" element={<WorkoutDetail />} />
-          <Route path="/workout/active" element={<ActiveWorkout />} />
-          <Route path="/exercises" element={<ExerciseLibrary />} />
-          <Route path="/exercises/:id" element={<ExerciseDetail />} />
-          <Route path="/nutrition" element={<Nutrition />} />
-          <Route path="/nutrition/add" element={<AddFood />} />
-          <Route path="/nutrition/food/new" element={<FoodEditor />} />
-          <Route path="/nutrition/food/:id/edit" element={<FoodEditor />} />
-          <Route path="/nutrition/food/:id" element={<FoodDetail />} />
-          <Route path="/progress" element={<Progress />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+      <ErrorBoundary key={pathname}>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/workouts" element={<Workouts />} />
+            <Route path="/workouts/programs" element={<Programs />} />
+            <Route path="/workouts/routine/:id" element={<RoutineEditor />} />
+            <Route path="/workouts/history" element={<History />} />
+            <Route path="/workouts/history/:id" element={<WorkoutDetail />} />
+            <Route path="/workout/active" element={<ActiveWorkout />} />
+            <Route path="/exercises" element={<ExerciseLibrary />} />
+            <Route path="/exercises/:id" element={<ExerciseDetail />} />
+            <Route path="/nutrition" element={<Nutrition />} />
+            <Route path="/nutrition/add" element={<AddFood />} />
+            <Route path="/nutrition/food/new" element={<FoodEditor />} />
+            <Route path="/nutrition/food/:id/edit" element={<FoodEditor />} />
+            <Route path="/nutrition/food/:id" element={<FoodDetail />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
       {!inWorkout && <ActiveWorkoutBar />}
       <RestTimerBar raised={!inWorkout} />
       {!inWorkout && <BottomNav />}

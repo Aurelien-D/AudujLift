@@ -4,11 +4,14 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BarsChart, TrendChart } from '../../components/charts'
 import { Measurements, ProgressPhotos } from './BodyExtras'
+import { MuscleMap } from '../../components/MuscleMap'
 import { RankBadge, RankProgress } from '../../components/RankBadge'
+import { Stagnations } from '../../components/Stagnations'
 import { Button, Card, EmptyState, IconButton, NumberInput, Page, SectionTitle, Stat, Tabs } from '../../components/ui'
 import { db } from '../../lib/db'
 import { MUSCLE_LABELS } from '../../lib/exercises-data'
 import { useDoneWorkouts, useExerciseMap, useExercises, useLatestBodyweight, useSettings } from '../../lib/hooks'
+import { muscleSets as countMuscleSets } from '../../lib/insights'
 import { sumNutrients } from '../../lib/nutrition'
 import { computeRank, exerciseHistory, personalRecords, RANKS, workoutTotals, type RankResult } from '../../lib/stats'
 import type { Exercise, MuscleGroup } from '../../lib/types'
@@ -239,10 +242,19 @@ function RanksTab() {
 }
 
 function StatsTab() {
+  const navigate = useNavigate()
   const workouts = useDoneWorkouts()
   const exMap = useExerciseMap()
   const settings = useSettings()
   const since7 = addDays(toISODate(), -6)
+  const [week, setWeek] = useState<'0' | '1'>('0')
+  const weekSets = useMemo(() => {
+    const monday = startOfWeek(new Date())
+    monday.setDate(monday.getDate() - Number(week) * 7)
+    const end = new Date(monday)
+    end.setDate(end.getDate() + 7)
+    return countMuscleSets(workouts ?? [], exMap, monday.getTime(), end.getTime())
+  }, [workouts, exMap, week])
   const entries = useLiveQuery(() => db.entries.where('date').aboveOrEqual(since7).toArray(), [since7])
 
   const totals = useMemo(() => {
@@ -295,6 +307,34 @@ function StatsTab() {
 
   return (
     <>
+      <SectionTitle
+        action={
+          <button onClick={() => navigate('/recap')} className="text-sm font-medium text-gold">
+            Bilan de la semaine
+          </button>
+        }
+      >
+        Muscles travaillés
+      </SectionTitle>
+      <Card>
+        <Tabs
+          value={week}
+          onChange={setWeek}
+          tabs={[
+            { value: '0', label: 'Cette semaine' },
+            { value: '1', label: 'Semaine dernière' },
+          ]}
+        />
+        <div className="mt-3">
+          <MuscleMap sets={weekSets} />
+        </div>
+      </Card>
+
+      <div className="mt-3">
+        <Stagnations limit={5} />
+      </div>
+
+      <SectionTitle>Depuis le début</SectionTitle>
       <Card className="grid grid-cols-3 gap-2">
         <Stat label="Séances" value={totals.count} />
         <Stat label="Volume total" value={formatNumber(totals.volume / 1000, 1)} unit="t" />

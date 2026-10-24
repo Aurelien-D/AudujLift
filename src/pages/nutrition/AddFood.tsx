@@ -1,11 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Camera, Loader2, PenLine, ScanBarcode, Search, Star, Trash2, Utensils, Zap } from 'lucide-react'
+import { Camera, ChefHat, Loader2, PenLine, ScanBarcode, Search, ShoppingCart, Star, Trash2, Utensils, Zap } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BarcodeScanner } from '../../components/BarcodeScanner'
 import { Button, Chip, EmptyState, Field, IconButton, inputClass, MacroLine, NumberInput, Page, SectionTitle, Sheet, Tabs } from '../../components/ui'
 import { db } from '../../lib/db'
 import { ensureFood, logSavedMeal, lookupBarcode } from '../../lib/foods'
+import { addToShopping } from '../../lib/shopping'
 import { kcalFromMacros, MEAL_LABELS, MEALS, sumNutrients } from '../../lib/nutrition'
 import { searchCiqual } from '../../lib/ciqual'
 import { searchProducts } from '../../lib/off'
@@ -33,7 +34,13 @@ export function FoodRow({ food, onClick }: { food: Food; onClick: () => void }) 
   return (
     <button onClick={onClick} className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left active:bg-raised">
       <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised">
-        {img ? <img src={img} alt="" loading="lazy" className="size-full object-cover" /> : <Utensils size={18} strokeWidth={1.75} className="text-silver" />}
+        {img ? (
+          <img src={img} alt="" loading="lazy" className="size-full object-cover" />
+        ) : food.recipe ? (
+          <ChefHat size={18} strokeWidth={1.75} className="text-gold" />
+        ) : (
+          <Utensils size={18} strokeWidth={1.75} className="text-silver" />
+        )}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -271,6 +278,17 @@ export default function AddFood() {
             </div>
           ) : (
             <div className="mt-2">
+              {tab === 'mine' && (
+                <button
+                  onClick={() => navigate(`/nutrition/recipe/new?${ctx}`)}
+                  className="press mb-1 flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left text-gold active:bg-raised"
+                >
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-gold/12">
+                    <ChefHat size={20} />
+                  </div>
+                  Nouvelle recette (ingrédients pesés, portions)
+                </button>
+              )}
               {local.map((f) => (
                 <FoodRow key={f.id} food={f} onClick={() => openFood(f)} />
               ))}
@@ -312,6 +330,16 @@ function SavedMealRow({ meal, onAdd }: { meal: SavedMeal; onAdd: () => void }) {
           <MacroLine {...t} />
         </div>
       </button>
+      <IconButton
+        aria-label={`Ajouter ${meal.name} à la liste de courses`}
+        className="text-silver"
+        onClick={async () => {
+          await addToShopping(meal.items.filter((i) => i.quantity > 0).map((i) => ({ foodId: i.foodId, name: i.name, quantity: i.quantity, unit: i.unit })))
+          alert(`Ingrédients de « ${meal.name} » ajoutés à la liste de courses.`)
+        }}
+      >
+        <ShoppingCart size={16} />
+      </IconButton>
       <IconButton
         aria-label={`Supprimer ${meal.name}`}
         className="text-silver"

@@ -89,6 +89,8 @@ export interface WorkoutExercise {
   supersetId?: string
   /** Charge augmentée automatiquement (toutes les reps réussies la dernière fois) */
   progression?: { from: number; to: number }
+  /** Semaine allégée en cours : charge plafonnée (kg) */
+  deload?: number
 }
 
 export interface Workout {
@@ -138,6 +140,8 @@ export interface Food {
   lastQuantity?: number
   /** Date d'envoi à Open Food Facts (produit créé par l'utilisateur) */
   offSubmittedAt?: number
+  /** Recette : l'aliment est calculé à partir de ses ingrédients */
+  recipe?: Recipe
   createdAt: number
 }
 
@@ -163,7 +167,37 @@ export interface DayLog {
   dayType?: 'training' | 'rest'
 }
 
-/** Repas favori / recette : un ensemble d'aliments à ajouter en un geste */
+export interface RecipeIngredient {
+  foodId?: string
+  name: string
+  brand?: string
+  /** Quantité crue (g ou ml) */
+  quantity: number
+  unit: 'g' | 'ml'
+  /** Valeurs pour 100 g/ml au moment de l'ajout */
+  per100: Nutrients
+}
+
+export interface Recipe {
+  ingredients: RecipeIngredient[]
+  portions: number
+  /** Poids total après cuisson (g) ; sinon somme des ingrédients */
+  cookedWeight?: number
+}
+
+/** Article de la liste de courses */
+export interface ShoppingItem {
+  id: string
+  /** Clé de regroupement (aliment ou nom normalisé) */
+  key: string
+  name: string
+  quantity?: number
+  unit?: 'g' | 'ml'
+  checked: boolean
+  createdAt: number
+}
+
+/** Repas favori : un ensemble d'aliments à ajouter en un geste */
 export interface SavedMeal {
   id: string
   name: string
@@ -234,4 +268,8 @@ export interface Settings {
   lastBackupAt?: number
   /** Suggestion d'ajustement des calories masquée jusqu'à… */
   tdeeSnoozeUntil?: number
+  /** Semaines allégées programmées : charge plafonnée par exercice jusqu'à une date */
+  deloads?: Record<string, { weight: number; until: number }>
+  /** Alertes de stagnation ignorées (date), par exercice */
+  stagnationDismissed?: Record<string, number>
 }

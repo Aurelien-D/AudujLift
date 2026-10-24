@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProfileAvatar, ProfileSwitcher } from '../components/ProfileSwitcher'
 import { SolarSigil } from '../components/SolarSigil'
+import { Stagnations } from '../components/Stagnations'
 import { Button, Card, IconButton, SectionTitle } from '../components/ui'
 import { downloadBlob, exportBackup } from '../lib/backup'
 import { db, saveSettings } from '../lib/db'
@@ -79,6 +80,9 @@ export default function Home() {
   const today = toISODate()
   const oldestData = Math.min(list.at(-1)?.startedAt ?? Infinity, oldestEntry ?? Infinity)
   const backupDue = needsBackup(settings.lastBackupAt, Number.isFinite(oldestData) ? oldestData : undefined)
+  // Bilan proposé le dimanche soir (semaine en cours) et le lundi (semaine écoulée)
+  const day = new Date(now).getDay()
+  const recapReady = day === 0 && new Date(now).getHours() >= 17 ? 0 : day === 1 ? 1 : undefined
   const volDelta = volume.before > 0 ? Math.round(((volume.now - volume.before) / volume.before) * 100) : undefined
 
   return (
@@ -199,11 +203,24 @@ export default function Home() {
         </Card>
       )}
 
+      {recapReady != null && (
+        <Card className="mt-3 border-gold/30" onClick={() => navigate(recapReady ? '/recap?w=1' : '/recap')}>
+          <div className="flex items-center gap-3">
+            <SolarSigil size={22} className="shrink-0 text-gold" />
+            <div className="min-w-0 flex-1">
+              <div className="font-medium text-ivory">Ton bilan de la semaine est prêt</div>
+              <div className="text-xs text-silver">Séances, records, muscles, nutrition et un conseil pour la suivante.</div>
+            </div>
+            <ChevronRight size={18} className="text-silver" />
+          </div>
+        </Card>
+      )}
+
       {/* Progression */}
       <SectionTitle
         action={
-          <button onClick={() => navigate('/progress')} className="text-sm font-medium text-gold">
-            Détails
+          <button onClick={() => navigate('/recap')} className="text-sm font-medium text-gold">
+            Bilan
           </button>
         }
       >
@@ -280,6 +297,10 @@ export default function Home() {
           </ul>
         </Card>
       )}
+
+      <div className="mt-3">
+        <Stagnations limit={1} />
+      </div>
 
       {/* Nutrition */}
       <SectionTitle

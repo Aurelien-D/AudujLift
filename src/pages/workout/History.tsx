@@ -34,7 +34,7 @@ export function MonthCalendar({ workouts, onDay }: { workouts: Workout[]; onDay?
         </IconButton>
         <div className="text-center">
           <div className="font-semibold">{capitalize(monthFmt.format(cursor))}</div>
-          <div className="text-xs text-zinc-500">
+          <div className="text-xs text-zinc-400">
             {count} jour{count > 1 ? 's' : ''} d'entraînement
           </div>
         </div>
@@ -42,7 +42,7 @@ export function MonthCalendar({ workouts, onDay }: { workouts: Workout[]; onDay?
           <ChevronRight size={20} />
         </IconButton>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-zinc-500">
+      <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-zinc-400">
         {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
           <div key={i}>{d}</div>
         ))}
@@ -99,7 +99,7 @@ export default function History() {
       {groups.map(([month, list]) => (
         <div key={month}>
           <SectionTitle>
-            {month} <span className="text-zinc-600">· {list.length} séances</span>
+            {month} <span className="text-zinc-400">· {list.length} séances</span>
           </SectionTitle>
           <div className="space-y-2">
             {list.map((w) => {
@@ -108,7 +108,7 @@ export default function History() {
                 <Card key={w.id} onClick={() => navigate(`/workouts/history/${w.id}`)} className="p-3">
                   <div className="flex items-baseline justify-between gap-2">
                     <h3 className="truncate font-semibold">{w.name}</h3>
-                    <span className="shrink-0 text-xs text-zinc-500">{formatDate(w.startedAt)}</span>
+                    <span className="shrink-0 text-xs text-zinc-400">{formatDate(w.startedAt)}</span>
                   </div>
                   <p className="mt-0.5 text-xs text-zinc-400">
                     {formatDuration(t.durationMs)} · {formatNumber(t.volume, 0)} kg · {t.sets} séries
@@ -116,10 +116,10 @@ export default function History() {
                   <ul className="mt-2 space-y-0.5 text-sm text-zinc-300">
                     {w.exercises.slice(0, 4).map((e) => (
                       <li key={e.uid} className="truncate">
-                        <span className="text-zinc-500">{e.sets.length} ×</span> {exMap.get(e.exerciseId)?.name}
+                        <span className="text-zinc-400">{e.sets.length} ×</span> {exMap.get(e.exerciseId)?.name}
                       </li>
                     ))}
-                    {w.exercises.length > 4 && <li className="text-xs text-zinc-500">+ {w.exercises.length - 4} autres</li>}
+                    {w.exercises.length > 4 && <li className="text-xs text-zinc-400">+ {w.exercises.length - 4} autres</li>}
                   </ul>
                 </Card>
               )

@@ -40,7 +40,7 @@ function PhotoSlot({ label, value, onChange, hint }: { label: string; value?: st
             </button>
           </>
         ) : (
-          <div className="flex flex-col items-center gap-1 px-2 text-center text-xs text-zinc-500">
+          <div className="flex flex-col items-center gap-1 px-2 text-center text-xs text-zinc-400">
             <Camera size={26} className="text-lime-400" />
             {hint}
           </div>
@@ -192,7 +192,7 @@ export default function FoodEditor() {
       )}
       {ocrMsg && <p className="mt-2 text-sm text-zinc-300">{ocrMsg}</p>}
       {ocrText && (
-        <details className="mt-2 text-xs text-zinc-500">
+        <details className="mt-2 text-xs text-zinc-400">
           <summary className="cursor-pointer">Texte reconnu</summary>
           <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-zinc-950 p-2 whitespace-pre-wrap">{ocrText}</pre>
         </details>

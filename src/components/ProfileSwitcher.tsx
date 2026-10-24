@@ -43,7 +43,7 @@ export function ProfileSwitcher({ open, onClose }: { open: boolean; onClose: () 
               {p.id === active && <Check size={18} className="text-lime-400" />}
             </button>
             {p.id !== active && (
-              <IconButton aria-label={`Supprimer ${p.name}`} onClick={() => remove(p)} className="text-zinc-500">
+              <IconButton aria-label={`Supprimer ${p.name}`} onClick={() => remove(p)} className="text-zinc-400">
                 <Trash2 size={18} />
               </IconButton>
             )}

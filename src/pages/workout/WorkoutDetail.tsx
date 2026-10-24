@@ -210,7 +210,7 @@ export default function WorkoutDetail() {
         </div>
       )}
       {summary && (
-        <p className="mt-6 flex items-center justify-center gap-1 text-xs text-zinc-500">
+        <p className="mt-6 flex items-center justify-center gap-1 text-xs text-zinc-400">
           <Clock size={12} /> Repos bien mérité · <Flame size={12} /> pense à tes protéines
         </p>
       )}

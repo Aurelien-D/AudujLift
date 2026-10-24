@@ -100,7 +100,7 @@ export default function ExerciseDetail() {
               {bw ? 'Fais une séance avec cet exercice pour obtenir ton rang.' : 'Renseigne ton poids de corps (onglet Progrès) pour débloquer les rangs.'}
             </p>
           )}
-          <details className="mt-3 text-xs text-zinc-500">
+          <details className="mt-3 text-xs text-zinc-400">
             <summary className="cursor-pointer">Barème des rangs</summary>
             <div className="mt-2 grid grid-cols-3 gap-1">
               {RANKS.map((r) => (
@@ -155,7 +155,7 @@ export default function ExerciseDetail() {
                   <Card className="grid grid-cols-4 gap-2 p-3 text-center">
                     {Object.entries(pr.repMaxes).map(([reps, v]) => (
                       <div key={reps} className="rounded-lg bg-zinc-950/60 py-2">
-                        <div className="text-[11px] text-zinc-500">{reps} RM</div>
+                        <div className="text-[11px] text-zinc-400">{reps} RM</div>
                         <div className="font-semibold">{formatNumber(v.weight)}</div>
                       </div>
                     ))}
@@ -173,7 +173,7 @@ export default function ExerciseDetail() {
                 <Card key={s.workoutId} className="p-3" onClick={() => navigate(`/workouts/history/${s.workoutId}`)}>
                   <div className="flex justify-between text-sm">
                     <span className="font-medium">{formatDate(s.date)}</span>
-                    {s.bestE1rm > 0 && <span className="text-xs text-zinc-500">1RM ~{formatNumber(s.bestE1rm)} kg</span>}
+                    {s.bestE1rm > 0 && <span className="text-xs text-zinc-400">1RM ~{formatNumber(s.bestE1rm)} kg</span>}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-zinc-300">
                     {s.sets.map((set, i) => (
@@ -187,7 +187,7 @@ export default function ExerciseDetail() {
               )
             })}
           </div>
-          {history.length > 30 && <p className="mt-2 text-center text-xs text-zinc-500">Depuis le {formatShortDate(history.at(-1)!.date)}</p>}
+          {history.length > 30 && <p className="mt-2 text-center text-xs text-zinc-400">Depuis le {formatShortDate(history.at(-1)!.date)}</p>}
         </>
       )}
 

@@ -104,7 +104,7 @@ export default function Workouts() {
       {[...folders.entries()].map(([folder, list]) => (
         <div key={folder}>
           <SectionTitle>
-            {folder} <span className="text-zinc-600">({list.length})</span>
+            {folder} <span className="text-zinc-400">({list.length})</span>
           </SectionTitle>
           <div className="space-y-3">
             {list.map((r) => (
@@ -113,7 +113,7 @@ export default function Workouts() {
                   <div className="min-w-0 flex-1" onClick={() => navigate(`/workouts/routine/${r.id}`)}>
                     <h3 className="truncate text-base font-bold">{r.name}</h3>
                     <p className="mt-0.5 line-clamp-2 text-sm text-zinc-400">{r.exercises.map((e) => exMap.get(e.exerciseId)?.name ?? '?').join(', ') || 'Aucun exercice'}</p>
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-zinc-400">
                       {r.exercises.length} exercices · {r.exercises.reduce((n, e) => n + e.sets.length, 0)} séries
                       {r.lastUsedAt && ` · dernière fois le ${formatShortDate(r.lastUsedAt)}`}
                     </p>

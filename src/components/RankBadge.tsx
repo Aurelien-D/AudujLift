@@ -28,7 +28,7 @@ export function RankProgress({ result }: { result: RankResult }) {
         <span className="font-semibold" style={{ color: result.rank.color }}>
           {result.rank.name}
         </span>
-        {result.next && <span className="text-zinc-500">{result.next.name}</span>}
+        {result.next && <span className="text-zinc-400">{result.next.name}</span>}
       </div>
       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-zinc-800">
         <div className="h-full rounded-full" style={{ width: `${result.progress * 100}%`, background: result.next?.color ?? result.rank.color }} />

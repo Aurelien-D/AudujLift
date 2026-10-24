@@ -5,7 +5,7 @@
           list_filter(images, lambda x: x.key IN ('front_fr','front_en'))[1].rev AS front_rev, ...[1].key AS front_key
    FROM read_parquet('https://huggingface.co/datasets/openfoodfacts/product-database/resolve/main/food.parquet')
    WHERE list_contains(countries_tags, 'en:france') AND NOT no_nutrition_data AND NOT obsolete
-   ORDER BY unique_scans_n DESC LIMIT 40000
+   ORDER BY unique_scans_n DESC LIMIT 54000  -- ~40 000 produits gardés après filtrage
 2) Conversion : python3 scripts/off-popular.py extraction.json src/data/off-fr.json [nombre]
 
 Ligne produite : [code, nom, marque, kcal, prot, gluc, lip, sucres, fibres, AGS, sel, portion, unité, nutriscore, image]
@@ -16,7 +16,7 @@ import re
 import sys
 
 src, out = sys.argv[1], sys.argv[2]
-limit = int(sys.argv[3]) if len(sys.argv) > 3 else 15000
+limit = int(sys.argv[3]) if len(sys.argv) > 3 else 40000
 rows, seen = [], set()
 NON_EU = re.compile(r'^(0|1|6[0-9]|7[0-6]|77|78|79|8[5-9]|9[0-9])')
 

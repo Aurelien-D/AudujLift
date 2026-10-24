@@ -136,6 +136,8 @@ export interface Food {
   lastUsedAt?: number
   /** Dernière quantité consommée (proposée par défaut la fois suivante) */
   lastQuantity?: number
+  /** Date d'envoi à Open Food Facts (produit créé par l'utilisateur) */
+  offSubmittedAt?: number
   createdAt: number
 }
 

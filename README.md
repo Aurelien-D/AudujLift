@@ -17,7 +17,7 @@ Application web (PWA installable sur téléphone) de suivi **musculation** et **
 ### Nutrition
 - Journal par repas (petit-déj, déjeuner, collations, dîner), anneau des calories restantes et barres de macros.
 - **Scan de code-barres** avec la caméra (API native sur Android/Chrome, ZXing sur iPhone) relié à **[Open Food Facts](https://fr.openfoodfacts.org)**, la base alimentaire libre et collaborative (excellente couverture en France), + saisie manuelle du code.
-- **Recherche** : ~3 400 **aliments génériques de la table Ciqual 2025 (ANSES)** et les **15 000 produits de marque les plus scannés en France** (Open Food Facts) embarqués dans l'appli — recherche et scan instantanés, même hors connexion — complétés en ligne par toute la base Open Food Facts (plus de 3 millions de produits).
+- **Recherche** : ~3 400 **aliments génériques de la table Ciqual 2025 (ANSES)** et les **40 000 produits de marque les plus scannés en France** (Open Food Facts) embarqués dans l'appli — recherche et scan instantanés, même hors connexion — complétés en ligne par toute la base Open Food Facts (plus de 3 millions de produits).
 - **Création d'aliment avec photos** du paquet et de l'étiquette, et **lecture automatique du tableau nutritionnel (OCR)** qui pré-remplit kcal, protéines, glucides, sucres, lipides, AGS, fibres et sel — avec contrôle de cohérence.
 - Portions, favoris, récents, **ajout rapide** (kcal/macros), copie du repas de la veille, suivi de **l'hydratation**, Nutri-Score.
 - **Calcul des besoins** (Mifflin-St Jeor × activité, objectif sèche/maintien/masse) et proposition de macros.

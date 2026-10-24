@@ -7,6 +7,7 @@ import { downloadBlob, exportBackup, importBackup } from '../lib/backup'
 import { db, saveSettings } from '../lib/db'
 import { useLatestBodyweight, useSettings } from '../lib/hooks'
 import { ACTIVITY_LABELS, GOAL_LABELS, suggestGoals } from '../lib/nutrition'
+import { forgetOffAccount, offAccount } from '../lib/off-contribute'
 import { activeProfile, listProfiles, renameProfile } from '../lib/profiles'
 import type { Activity, Goal, Settings } from '../lib/types'
 import { formatClock, formatShortDate, toISODate, uid } from '../lib/utils'
@@ -20,6 +21,7 @@ export default function Profile() {
   const [suggestion, setSuggestion] = useState<ReturnType<typeof suggestGoals> | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [switcher, setSwitcher] = useState(false)
+  const [offUser, setOffUser] = useState(() => offAccount()?.userId)
   const profile = activeProfile()
 
   useEffect(() => {
@@ -238,6 +240,23 @@ export default function Profile() {
         <p className="text-sm text-silver">
           Tes données restent sur cet appareil (aucun compte, aucun serveur). Pense à faire une sauvegarde de temps en temps, ou pour passer sur un autre téléphone.
         </p>
+        {offUser && (
+          <div className="flex items-center justify-between gap-2 border-t border-line/60 pt-2 text-xs text-silver">
+            <span>
+              Compte Open Food Facts : <span className="text-ivory-dim">{offUser}</span>
+            </span>
+            <Button
+              variant="tertiary"
+              size="sm"
+              onClick={() => {
+                forgetOffAccount()
+                setOffUser(undefined)
+              }}
+            >
+              Oublier
+            </Button>
+          </div>
+        )}
         <p className="text-xs text-silver-dim">{stored.lastBackupAt ? `Dernière sauvegarde : ${formatShortDate(stored.lastBackupAt)}` : 'Aucune sauvegarde pour le moment.'}</p>
         <div className="grid grid-cols-2 gap-2">
           <Button

@@ -80,13 +80,16 @@ export async function searchPopularProducts(query: string, limit = 30): Promise<
     .filter(Boolean)
   if (!words.length) return []
   const { items } = await load()
-  return items
-    .map((it) => ({ it, s: scoreName(words, it) }))
-    .filter((x): x is { it: Indexed; s: number } => x.s !== null)
-    .map((x) => ({ ...x, s: x.s - x.it.rank / 4000 }))
-    .sort((a, b) => b.s - a.s)
-    .slice(0, limit)
-    .map((x) => offRowToFood(x.it.row))
+  return (
+    items
+      .map((it) => ({ it, s: scoreName(words, it) }))
+      .filter((x): x is { it: Indexed; s: number } => x.s !== null)
+      // Bonus de popularité plafonné : au-delà des 15 000 premiers, seule la pertinence départage
+      .map((x) => ({ ...x, s: x.s - Math.min(x.it.rank, 15000) / 4000 }))
+      .sort((a, b) => b.s - a.s)
+      .slice(0, limit)
+      .map((x) => offRowToFood(x.it.row))
+  )
 }
 
 export async function findPopularByBarcode(code: string): Promise<Food | null> {

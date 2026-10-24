@@ -94,10 +94,12 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
-.pt-safe {
+/* Zones de sécurité (encoche, barre d'état, barre d'accueil). Utilitaires Tailwind : ils ne
+   masquent plus un « pt-5 » posé à côté — utiliser une valeur pt-[calc(env(safe-area-inset-top)+…)] pour cumuler les deux. */
+@utility pt-safe {
   padding-top: env(safe-area-inset-top);
 }
-.pb-safe {
+@utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
 

@@ -66,7 +66,7 @@ export function RestTimerBar({ raised }: { raised: boolean }) {
   if (expanded)
     return createPortal(
       <div className="animate-fade fixed inset-0 z-[60] flex flex-col bg-ink/97 backdrop-blur-xl" role="dialog" aria-label="Repos">
-        <div className="pt-safe flex justify-end px-3 pt-3">
+        <div className="flex justify-end px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
           <button aria-label="Réduire" onClick={() => setExpanded(false)} className="press flex size-11 items-center justify-center rounded-full text-silver active:bg-raised">
             <Minimize2 size={22} />
           </button>

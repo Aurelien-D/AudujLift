@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Camera, ChefHat, Loader2, PenLine, ScanBarcode, Search, ShoppingCart, Star, Trash2, Utensils, Zap } from 'lucide-react'
+import { Camera, ChefHat, Loader2, PenLine, ScanBarcode, Search, ShoppingCart, Sparkles, Star, Trash2, Utensils, Zap } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BarcodeScanner } from '../../components/BarcodeScanner'
@@ -179,21 +179,27 @@ export default function AddFood() {
         />
       </div>
 
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <button onClick={() => setScan(true)} className="press flex flex-col items-center gap-1.5 rounded-2xl bg-gold py-3 text-xs font-semibold text-ink active:bg-gold-pale">
+      <div className="mt-3 grid grid-cols-4 gap-2">
+        <button onClick={() => setScan(true)} className="press flex flex-col items-center gap-1.5 rounded-2xl bg-gold py-3 text-[11px] font-semibold text-ink active:bg-gold-pale">
           <ScanBarcode size={22} /> Scanner
         </button>
         <button
-          onClick={() => navigate(`/nutrition/food/new?${ctx}`)}
-          className="press flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-surface py-3 text-xs font-medium text-ivory active:bg-raised"
+          onClick={() => navigate(`/nutrition/photo?${ctx}`)}
+          className="press flex flex-col items-center gap-1.5 rounded-2xl border border-gold/40 bg-surface py-3 text-[11px] font-medium text-ivory active:bg-raised"
         >
-          <Camera size={22} className="text-gold" /> Créer (photo)
+          <Sparkles size={22} className="text-gold" /> Assiette IA
+        </button>
+        <button
+          onClick={() => navigate(`/nutrition/food/new?${ctx}`)}
+          className="press flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-surface py-3 text-[11px] font-medium text-ivory active:bg-raised"
+        >
+          <Camera size={22} className="text-gold" /> Créer
         </button>
         <button
           onClick={() => setQuick(true)}
-          className="press flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-surface py-3 text-xs font-medium text-ivory active:bg-raised"
+          className="press flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-surface py-3 text-[11px] font-medium text-ivory active:bg-raised"
         >
-          <Zap size={22} className="text-gold" /> Ajout rapide
+          <Zap size={22} className="text-gold" /> Rapide
         </button>
       </div>
 

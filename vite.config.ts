@@ -34,7 +34,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // Gros jeux de données : téléchargés au premier usage puis mis en cache (pas à l'installation)
-        globIgnores: ['**/off-fr-*.js', '**/exercise-guides-*.js'],
+        globIgnores: ['**/off-fr-*.js', '**/exercise-guides-*.js', '**/sdk-*.js'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {

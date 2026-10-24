@@ -76,7 +76,7 @@ export const KIND_LABELS: Record<ExerciseKind, string> = {
 
 type Row = [id: string, name: string, muscle: MuscleGroup, secondary: MuscleGroup[], equipment: Equipment, kind?: ExerciseKind, standard?: number]
 
-// standard = ratio e1RM / poids de corps visé pour le rang « Platine » (homme).
+// standard = ratio e1RM / poids de corps visé pour le rang « Émeraude » (homme de 80 kg ; sexe, poids et taille ajustés par DOTS).
 const ROWS: Row[] = [
   // Pectoraux
   ['bench-press', 'Développé couché (barre)', 'pectoraux', ['triceps', 'epaules'], 'barre', 'weight_reps', 1.25],

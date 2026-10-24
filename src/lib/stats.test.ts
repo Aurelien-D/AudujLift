@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeRank, detectPRs, e1rm, exerciseHistory, personalRecords, platesPerSide, weeklyStreak } from './stats'
+import { bodyRegion, computeRank, detectPRs, e1rm, e1rmForLevel, exerciseHistory, personalRecords, platesPerSide, rankFromLevel, rankFromScore, weeklyStreak } from './stats'
 import type { Exercise, Workout } from './types'
 
 const bench: Exercise = { id: 'bench-press', name: 'Développé couché', muscle: 'pectoraux', secondary: [], equipment: 'barre', kind: 'weight_reps', standard: 1.25 }
@@ -57,14 +57,57 @@ describe('historique et records', () => {
 })
 
 describe('rangs', () => {
-  it('attribue Platine au standard exact', () => {
-    expect(computeRank(100, 80, 1.25, 'male')?.rank.name).toBe('Platine')
+  const man80 = { sex: 'male' as const, bodyweight: 80, heightCm: 176 }
+  it('le standard exact donne Émeraude IV (homme de référence)', () => {
+    const r = computeRank(100, 1.25, man80)
+    expect(r?.label).toBe('Émeraude IV')
+    expect(r?.nextLabel).toBe('Émeraude III')
   })
-  it('ajuste pour les femmes', () => {
-    expect(computeRank(62, 80, 1.25, 'female')?.rank.name).toBe('Platine')
+  it('échelle Bronze → Challenger avec divisions', () => {
+    expect(rankFromLevel(0.05).label).toBe('Bronze IV')
+    expect(rankFromLevel(0.39).label).toBe('Bronze I')
+    expect(rankFromLevel(0.39).nextLabel).toBe('Argent IV')
+    expect(rankFromLevel(1.19).label).toBe('Émeraude I')
+    expect(rankFromLevel(1.5).label).toBe('Maître')
+    expect(rankFromLevel(1.5).nextLabel).toBe('Grand Maître')
+    expect(rankFromLevel(2.4).label).toBe('Challenger')
+    expect(rankFromLevel(2.4).nextLabel).toBeUndefined()
+  })
+  it('le palier suivant se calcule au bon niveau', () => {
+    // Or : 0,6 → 0,8 ; Or IV jusqu'à 0,65
+    const r = rankFromLevel(0.61)
+    expect(r.label).toBe('Or IV')
+    expect(r.nextLevel).toBeCloseTo(0.65)
+    expect(e1rmForLevel(r.nextLevel!, 1.25, man80)).toBeCloseTo(65)
+  })
+  it('poids : non linéaire (DOTS), les lourds ne sont pas pénalisés par un simple ratio', () => {
+    const needed = e1rmForLevel(1, 1.25, { sex: 'male', bodyweight: 120, heightCm: 176 })
+    expect(needed).toBeGreaterThan(100)
+    expect(needed).toBeLessThan(150) // l'ancien ratio linéaire demandait 150 kg
+  })
+  it('sexe : écart plus marqué en haut du corps', () => {
+    const woman = { sex: 'female' as const, bodyweight: 60, heightCm: 163 }
+    const upper = e1rmForLevel(1, 1.25, woman, 'upper')
+    const lower = e1rmForLevel(1, 1.6, woman, 'lower')
+    const man60 = { sex: 'male' as const, bodyweight: 60, heightCm: 176 }
+    expect(upper / e1rmForLevel(1, 1.25, man60)).toBeLessThan(lower / e1rmForLevel(1, 1.6, man60, 'lower'))
+    expect(upper / e1rmForLevel(1, 1.25, man60)).toBeGreaterThan(0.55)
+  })
+  it('taille : plus grand, objectif un peu plus bas, au plus 8 %', () => {
+    const tall = e1rmForLevel(1, 1.25, { ...man80, heightCm: 195 })
+    expect(tall).toBeLessThan(100)
+    expect(e1rmForLevel(1, 1.25, { ...man80, heightCm: 230 })).toBeCloseTo(100 / 1.08)
+    expect(e1rmForLevel(1, 1.25, { ...man80, heightCm: 0 })).toBeCloseTo(100)
+  })
+  it('bas du corps : le soulevé de terre compte comme jambes', () => {
+    expect(bodyRegion({ muscle: 'dos', secondary: ['ischios', 'fessiers'] })).toBe('lower')
+    expect(bodyRegion({ muscle: 'dos', secondary: ['biceps'] })).toBe('upper')
+  })
+  it('rang global : moyenne des scores', () => {
+    expect(rankFromScore(rankFromLevel(0.7).score).label).toBe('Or II')
   })
   it('renvoie undefined sans poids de corps', () => {
-    expect(computeRank(100, 0, 1.25, 'male')).toBeUndefined()
+    expect(computeRank(100, 1.25, { sex: 'male', bodyweight: 0 })).toBeUndefined()
   })
 })
 

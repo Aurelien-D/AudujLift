@@ -11,7 +11,7 @@ import { formatSet, setLabels } from '../../components/workout-parts'
 import { db } from '../../lib/db'
 import { EQUIPMENT_LABELS, KIND_LABELS, MUSCLE_LABELS } from '../../lib/exercises-data'
 import { useDoneWorkouts, useLatestBodyweight, useSettings } from '../../lib/hooks'
-import { computeRank, e1rmForRank, exerciseHistory, personalRecords, RANKS } from '../../lib/stats'
+import { bodyRegion, computeRank, e1rmForLevel, exerciseHistory, personalRecords, RANKS } from '../../lib/stats'
 import { cn, formatDate, formatNumber, formatShortDate } from '../../lib/utils'
 import { SET_TYPE_LABELS } from '../../lib/workout'
 
@@ -39,7 +39,9 @@ export default function ExerciseDetail() {
     )
 
   const strength = exercise.kind === 'weight_reps' || exercise.kind === 'bodyweight'
-  const rank = strength && exercise.standard && bw && pr.bestE1rm ? computeRank(pr.bestE1rm.value, bw, exercise.standard, settings.sex) : undefined
+  const body = { sex: settings.sex, bodyweight: bw ?? 0, heightCm: settings.heightCm }
+  const region = bodyRegion(exercise)
+  const rank = strength && exercise.standard && bw && pr.bestE1rm ? computeRank(pr.bestE1rm.value, exercise.standard, body, region) : undefined
 
   const chartData = [...history]
     .reverse()
@@ -87,14 +89,14 @@ export default function ExerciseDetail() {
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-silver">Ton rang</div>
                 <div className="font-display text-xl font-semibold" style={{ color: rank.rank.color }}>
-                  {rank.rank.name}
+                  {rank.label}
                 </div>
                 <div className="mt-1">
                   <RankProgress result={rank} />
                 </div>
-                {rank.next && bw && (
+                {rank.nextLabel && rank.nextLevel != null && (
                   <p className="mt-1.5 text-xs text-silver">
-                    {rank.next.name} à {formatNumber(e1rmForRank(rank.next, bw, exercise.standard, settings.sex), 0)} kg de 1RM estimé
+                    {rank.nextLabel} à {formatNumber(e1rmForLevel(rank.nextLevel, exercise.standard, body, region), 0)} kg de 1RM estimé
                   </p>
                 )}
               </div>
@@ -106,11 +108,17 @@ export default function ExerciseDetail() {
           )}
           <details className="mt-3 text-xs text-silver">
             <summary className="cursor-pointer">Barème des rangs</summary>
-            <div className="mt-2 grid grid-cols-3 gap-1">
+            <div className="mt-2 grid grid-cols-2 gap-1">
               {RANKS.map((r) => (
                 <div key={r.key} className="flex justify-between rounded bg-ink/60 px-2 py-1">
                   <span style={{ color: r.color }}>{r.name}</span>
-                  <span>{bw ? `${formatNumber(e1rmForRank(r, bw, exercise.standard!, settings.sex), 0)} kg` : `${formatNumber(r.min * exercise.standard!, 2)}×PDC`}</span>
+                  <span>
+                    {r.min === 0
+                      ? 'départ'
+                      : bw
+                        ? `${formatNumber(e1rmForLevel(r.min, exercise.standard!, body, region), 0)} kg`
+                        : `${formatNumber(r.min * exercise.standard!, 2)}×PDC`}
+                  </span>
                 </div>
               ))}
             </div>

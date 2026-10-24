@@ -18,6 +18,7 @@ import type { MuscleGroup } from '../lib/types'
 import { cn, formatClock, formatDate, formatDuration, formatNumber, formatShortDate, fromISODate, startOfWeek, toISODate } from '../lib/utils'
 import { NutritionSummary } from './nutrition/Nutrition'
 import { useStartWorkout } from './workout/Workouts'
+import { sortRoutines } from '../lib/routine-order'
 
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const DAY = 86400000
@@ -63,7 +64,8 @@ export default function Home() {
   // Routine suggérée : celle utilisée il y a le plus longtemps (rotation naturelle d'un programme)
   const next = useMemo(() => {
     if (!routines?.length) return undefined
-    return [...routines].sort((a, b) => (a.lastUsedAt ?? 0) - (b.lastUsedAt ?? 0) || a.createdAt - b.createdAt)[0]
+    // La moins récemment faite ; à égalité (jamais faites), la première dans l'ordre choisi par l'utilisateur
+    return sortRoutines(routines).sort((a, b) => (a.lastUsedAt ?? 0) - (b.lastUsedAt ?? 0))[0]
   }, [routines])
   const nextMuscles = useMemo(() => {
     const ms: MuscleGroup[] = []

@@ -9,12 +9,13 @@ import { useSettings } from '../../lib/hooks'
 import { extractShareCode } from '../../lib/share'
 import type { Routine } from '../../lib/types'
 import { cn, formatShortDate, normalize } from '../../lib/utils'
+import { sortRoutines } from '../../lib/routine-order'
 
 export default function Friends() {
   const navigate = useNavigate()
   const settings = useSettings()
   const friends = useLiveQuery(() => db.friends.orderBy('lastAt').reverse().toArray(), [])
-  const routines = useLiveQuery(() => db.routines.toArray(), [])
+  const routines = useLiveQuery(async () => sortRoutines(await db.routines.toArray()), [])
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [sharing, setSharing] = useState<Routine | null>(null)

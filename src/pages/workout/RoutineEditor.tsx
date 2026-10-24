@@ -139,10 +139,10 @@ export default function RoutineEditor() {
                   value={re.notes ?? ''}
                   onChange={(e) => updateEx(re.uid, (x) => ({ ...x, notes: e.target.value || undefined }))}
                   placeholder="Note (tempo, réglage…)"
-                  className="mt-2 w-full bg-transparent text-sm text-zinc-400 outline-none placeholder:text-zinc-600"
+                  className="mt-2 w-full bg-transparent text-sm text-zinc-400 outline-none placeholder:text-zinc-500"
                 />
               </div>
-              <div className="mt-2 grid grid-cols-[2.5rem_1fr_1fr] gap-2 px-1 text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+              <div className="mt-2 grid grid-cols-[2.5rem_1fr_1fr] gap-2 px-1 text-[11px] font-semibold tracking-wide text-zinc-400 uppercase">
                 <span className="text-center">Série</span>
                 <span className="text-center">{cols[0].label} (cible)</span>
                 <span className="text-center">{cols[1].label}</span>

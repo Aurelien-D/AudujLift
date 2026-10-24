@@ -168,12 +168,12 @@ export function Field({ label, children, hint }: { label: string; children: Reac
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-zinc-400">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-zinc-500">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-zinc-400">{hint}</span>}
     </label>
   )
 }
 
-export const inputClass = 'w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-base text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-lime-400/60'
+export const inputClass = 'w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-base text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-lime-400/60'
 
 /** Champ numérique tolérant la virgule, qui conserve la saisie intermédiaire ("72,"). */
 export function NumberInput({
@@ -324,7 +324,7 @@ export function MacroBar({ label, value, goal, color, unit = 'g' }: { label: str
     <div className="min-w-0 flex-1">
       <div className="mb-1 flex items-baseline justify-between gap-1 text-xs">
         <span className="font-medium text-zinc-300">{label}</span>
-        <span className="truncate text-zinc-500">
+        <span className="truncate text-zinc-400">
           <span className="text-zinc-200">{Math.round(value)}</span>/{goal}
           {unit}
         </span>

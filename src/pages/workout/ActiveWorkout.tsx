@@ -166,15 +166,15 @@ export default function ActiveWorkout() {
         )}
         <div className="mt-2 grid grid-cols-3 gap-2 px-1 text-sm">
           <div>
-            <div className="text-xs text-zinc-500">Volume</div>
+            <div className="text-xs text-zinc-400">Volume</div>
             <div className="font-semibold">{formatNumber(totals.volume, 0)} kg</div>
           </div>
           <div>
-            <div className="text-xs text-zinc-500">Séries</div>
+            <div className="text-xs text-zinc-400">Séries</div>
             <div className="font-semibold">{totals.sets}</div>
           </div>
           <div>
-            <div className="text-xs text-zinc-500">Répétitions</div>
+            <div className="text-xs text-zinc-400">Répétitions</div>
             <div className="font-semibold">{totals.reps}</div>
           </div>
         </div>
@@ -217,7 +217,7 @@ export default function ActiveWorkout() {
                       onChange={(e) => updateEx(we.uid, (x) => ({ ...x, notes: e.target.value || undefined }))}
                       placeholder="Note pour cet exercice…"
                       rows={1}
-                      className="mt-1 w-full resize-none rounded-lg bg-zinc-950/60 px-2 py-1.5 text-sm text-amber-200/90 outline-none placeholder:text-zinc-600"
+                      className="mt-1 w-full resize-none rounded-lg bg-zinc-950/60 px-2 py-1.5 text-sm text-amber-200/90 outline-none placeholder:text-zinc-500"
                     />
                   )}
                   <div className="mt-1">
@@ -225,7 +225,7 @@ export default function ActiveWorkout() {
                   </div>
                 </div>
 
-                <div className="mt-3 grid grid-cols-[2.25rem_1fr_4.5rem_4.5rem_2.75rem] items-center gap-1.5 text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+                <div className="mt-3 grid grid-cols-[2.25rem_1fr_4.5rem_4.5rem_2.75rem] items-center gap-1.5 text-[11px] font-semibold tracking-wide text-zinc-400 uppercase">
                   <span className="text-center">Série</span>
                   <span className="text-center">Précédent</span>
                   <span className="text-center">{cols[0].label}</span>
@@ -249,7 +249,7 @@ export default function ActiveWorkout() {
                         {labels[i]}
                       </button>
                       <button
-                        className="truncate text-center text-xs text-zinc-500"
+                        className="truncate text-center text-xs text-zinc-400"
                         disabled={!p}
                         onClick={() => p && updateSet(we.uid, i, { weight: p.weight, reps: p.reps, duration: p.duration, distance: p.distance })}
                       >
@@ -271,7 +271,7 @@ export default function ActiveWorkout() {
                         onClick={() => toggleDone(we, i)}
                         className={cn(
                           'flex h-9 items-center justify-center rounded-lg transition',
-                          s.done ? 'bg-lime-400 text-zinc-950' : 'bg-zinc-800 text-zinc-500 active:bg-zinc-700',
+                          s.done ? 'bg-lime-400 text-zinc-950' : 'bg-zinc-800 text-zinc-400 active:bg-zinc-700',
                         )}
                       >
                         <Check size={20} strokeWidth={3} />

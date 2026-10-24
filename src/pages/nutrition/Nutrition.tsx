@@ -109,7 +109,7 @@ export default function Nutrition() {
               <div className="flex items-center gap-2 px-4 pt-3 pb-2">
                 <span className="text-xl">{MEAL_EMOJI[meal]}</span>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-bold">{MEAL_LABELS[meal]}</h3>
+                  <h2 className="font-bold">{MEAL_LABELS[meal]}</h2>
                   {list.length > 0 && <MacroLine {...t} />}
                 </div>
                 <IconButton aria-label="Options du repas" onClick={() => setMealMenu(meal)}>
@@ -130,7 +130,7 @@ export default function Nutrition() {
                       <button onClick={() => openEntry(e)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-zinc-800/60">
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium">{e.name}</div>
-                          <div className="truncate text-xs text-zinc-500">
+                          <div className="truncate text-xs text-zinc-400">
                             {e.quantity > 0
                               ? `${formatNumber(e.quantity, 0)} ${e.unit}`
                               : `P ${Math.round(e.nutrients.protein)} · G ${Math.round(e.nutrients.carbs)} · L ${Math.round(e.nutrients.fat)}`}
@@ -139,7 +139,7 @@ export default function Nutrition() {
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-semibold">{Math.round(e.nutrients.kcal)}</div>
-                          <div className="text-[10px] text-zinc-500">kcal</div>
+                          <div className="text-[10px] text-zinc-400">kcal</div>
                         </div>
                       </button>
                     </li>

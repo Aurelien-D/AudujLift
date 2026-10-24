@@ -102,7 +102,7 @@ export default function FoodDetail() {
               <div key={m.label}>
                 <div className={cn('text-lg font-bold', m.color)}>{formatNumber(m.v)}</div>
                 <div className="text-[11px] text-zinc-400">{m.label}</div>
-                <div className="text-[10px] text-zinc-600">{m.goal ? Math.round((m.v / m.goal) * 100) : 0} % obj.</div>
+                <div className="text-[10px] text-zinc-400">{m.goal ? Math.round((m.v / m.goal) * 100) : 0} % obj.</div>
               </div>
             ))}
           </div>
@@ -144,7 +144,7 @@ export default function FoodDetail() {
             ))}
           </div>
         )}
-        {mode === 'serving' && food.servingLabel && <p className="mt-2 text-xs text-zinc-500">1 portion = {food.servingLabel}</p>}
+        {mode === 'serving' && food.servingLabel && <p className="mt-2 text-xs text-zinc-400">1 portion = {food.servingLabel}</p>}
 
         <div className="mt-4 mb-1 text-xs text-zinc-400">Repas</div>
         <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
@@ -166,7 +166,7 @@ export default function FoodDetail() {
 
       <h2 className="mt-6 mb-2 text-sm font-semibold tracking-wide text-zinc-400 uppercase">Valeurs nutritionnelles</h2>
       <Card className="p-0">
-        <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-zinc-800 px-4 py-2 text-xs text-zinc-500">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-zinc-800 px-4 py-2 text-xs text-zinc-400">
           <span />
           <span className="text-right">100 {food.unit}</span>
           <span className="w-16 text-right">
@@ -185,7 +185,7 @@ export default function FoodDetail() {
           </div>
         ))}
       </Card>
-      <div className="mt-3 flex items-center justify-between text-xs text-zinc-500">
+      <div className="mt-3 flex items-center justify-between text-xs text-zinc-400">
         <span>{food.source === 'off' ? 'Source : Open Food Facts' : food.source === 'ciqual' ? 'Source : table Ciqual 2025 (ANSES)' : 'Aliment créé par toi'}</span>
         <span className="flex items-center gap-2">
           {food.barcode && <span>EAN {food.barcode}</span>}

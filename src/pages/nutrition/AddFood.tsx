@@ -42,7 +42,7 @@ export function FoodRow({ food, onClick }: { food: Food; onClick: () => void }) 
         <div className="truncate text-xs text-zinc-400">
           {food.brand ? `${food.brand} · ` : ''}
           {Math.round(food.per100.kcal)} kcal · P {Math.round(food.per100.protein)} · G {Math.round(food.per100.carbs)} · L {Math.round(food.per100.fat)}{' '}
-          <span className="text-zinc-600">/100{food.unit}</span>
+          <span className="text-zinc-400">/100{food.unit}</span>
         </div>
       </div>
       <NutriScore grade={food.nutriscore} />
@@ -145,7 +145,7 @@ export default function AddFood() {
         ))}
       </div>
       <div className="relative">
-        <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-500" />
+        <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -201,7 +201,7 @@ export default function AddFood() {
               ))}
             </>
           )}
-          <SectionTitle action={remote.loading && <Loader2 size={16} className="animate-spin text-zinc-500" />}>Produits de marque · Open Food Facts</SectionTitle>
+          <SectionTitle action={remote.loading && <Loader2 size={16} className="animate-spin text-zinc-400" />}>Produits de marque · Open Food Facts</SectionTitle>
           {remote.error && (
             <div className="flex items-center gap-3 rounded-xl bg-rose-500/10 p-3 text-sm text-rose-300">
               <span className="flex-1">{remote.error}. Le scan de code-barres reste disponible.</span>
@@ -211,10 +211,10 @@ export default function AddFood() {
             </div>
           )}
           {!remote.loading && !remote.error && query.trim().length >= 3 && remote.results.length === 0 && (
-            <p className="text-sm text-zinc-500">Aucun produit de marque trouvé. Essaie un autre mot-clé, scanne le code-barres ou crée l'aliment.</p>
+            <p className="text-sm text-zinc-400">Aucun produit de marque trouvé. Essaie un autre mot-clé, scanne le code-barres ou crée l'aliment.</p>
           )}
-          {remote.loading && remote.results.length === 0 && <p className="text-sm text-zinc-500">Recherche en cours…</p>}
-          {query.trim().length < 3 && <p className="text-sm text-zinc-500">Tape au moins 3 lettres…</p>}
+          {remote.loading && remote.results.length === 0 && <p className="text-sm text-zinc-400">Recherche en cours…</p>}
+          {query.trim().length < 3 && <p className="text-sm text-zinc-400">Tape au moins 3 lettres…</p>}
           {remote.results.map((f) => (
             <FoodRow key={f.barcode ?? f.id} food={f} onClick={() => openFood(f)} />
           ))}

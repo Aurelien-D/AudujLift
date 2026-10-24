@@ -87,7 +87,7 @@ export function ExercisePicker({
     <Sheet open={open} onClose={close} title={title} full>
       <div className="sticky top-0 z-10 -mx-4 bg-zinc-900 px-4 pb-1">
         <div className="relative">
-          <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-500" />
+          <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un exercice" className={cn(inputClass, 'pl-10')} />
         </div>
         <MuscleChips value={muscle} onChange={setMuscle} />
@@ -101,7 +101,7 @@ export function ExercisePicker({
       {list.map((e) => (
         <ExerciseRow key={e.id} exercise={e} selected={selected.some((s) => s.id === e.id)} onClick={() => toggle(e)} />
       ))}
-      {list.length === 0 && <p className="py-8 text-center text-sm text-zinc-500">Aucun exercice trouvé.</p>}
+      {list.length === 0 && <p className="py-8 text-center text-sm text-zinc-400">Aucun exercice trouvé.</p>}
       {multiple && selected.length > 0 && (
         <div className="sticky bottom-0 -mx-4 bg-gradient-to-t from-zinc-900 via-zinc-900 px-4 pt-6 pb-1">
           <Button

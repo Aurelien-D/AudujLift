@@ -20,7 +20,7 @@ export function BottomNav() {
             to={to}
             end={end}
             className={({ isActive }) =>
-              cn('flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium transition', isActive ? 'text-lime-400' : 'text-zinc-500')
+              cn('flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium transition', isActive ? 'text-lime-400' : 'text-zinc-400')
             }
           >
             <Icon size={22} strokeWidth={2} />

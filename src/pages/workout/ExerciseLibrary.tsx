@@ -34,7 +34,7 @@ export default function ExerciseLibrary() {
       }
     >
       <div className="relative">
-        <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-500" />
+        <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher" className={cn(inputClass, 'pl-10')} />
       </div>
       <MuscleChips value={muscle} onChange={setMuscle} />

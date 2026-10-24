@@ -79,7 +79,7 @@ export default function Home() {
               <div className="font-semibold">Configure ton profil</div>
               <div className="text-sm text-zinc-400">Calcule tes besoins caloriques et tes objectifs de macros en 30 secondes.</div>
             </div>
-            <ChevronRight className="text-zinc-500" />
+            <ChevronRight className="text-zinc-400" />
           </div>
         </Card>
       )}
@@ -93,14 +93,14 @@ export default function Home() {
               {thisWeek}/{settings.weeklyWorkoutGoal} séances
             </div>
           </div>
-          <div className={cn('flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-bold', streak > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-zinc-800 text-zinc-500')}>
+          <div className={cn('flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-bold', streak > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-zinc-800 text-zinc-400')}>
             <Flame size={16} /> {streak} sem.
           </div>
         </div>
         <div className="mt-3 grid grid-cols-7 gap-1.5">
           {week.map((d, i) => (
             <div key={d.iso} className="flex flex-col items-center gap-1">
-              <span className={cn('text-[11px]', d.iso === today ? 'font-bold text-lime-400' : 'text-zinc-500')}>{DAY_LETTERS[i]}</span>
+              <span className={cn('text-[11px]', d.iso === today ? 'font-bold text-lime-400' : 'text-zinc-400')}>{DAY_LETTERS[i]}</span>
               <div
                 className={cn(
                   'flex size-8 items-center justify-center rounded-full',
@@ -170,12 +170,12 @@ export default function Home() {
           {last ? (
             <>
               <div className="mt-0.5 truncate font-semibold">{last.name}</div>
-              <div className="text-xs text-zinc-500">
+              <div className="text-xs text-zinc-400">
                 {formatDuration(workoutTotals(last, exMap).durationMs)} · {formatNumber(workoutTotals(last, exMap).volume, 0)} kg
               </div>
             </>
           ) : (
-            <div className="mt-1 text-sm text-zinc-500">Aucune</div>
+            <div className="mt-1 text-sm text-zinc-400">Aucune</div>
           )}
         </Card>
         <Card onClick={() => navigate('/progress')} className="p-3">

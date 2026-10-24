@@ -8,7 +8,7 @@ export interface Point {
 
 /** Courbe d'évolution simple (accent dégradé), lisible sur mobile. */
 export function TrendChart({ data, unit = '', height = 180, decimals = 1 }: { data: Point[]; unit?: string; height?: number; decimals?: number }) {
-  if (data.length < 2) return <p className="py-8 text-center text-sm text-zinc-500">Pas encore assez de données pour tracer une courbe.</p>
+  if (data.length < 2) return <p className="py-8 text-center text-sm text-zinc-400">Pas encore assez de données pour tracer une courbe.</p>
   const values = data.map((d) => d.value)
   const min = Math.min(...values)
   const max = Math.max(...values)
@@ -30,12 +30,12 @@ export function TrendChart({ data, unit = '', height = 180, decimals = 1 }: { da
             scale="time"
             domain={['dataMin', 'dataMax']}
             tickFormatter={(v) => formatShortDate(v)}
-            tick={{ fill: '#71717a', fontSize: 11 }}
+            tick={{ fill: '#a1a1aa', fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             minTickGap={24}
           />
-          <YAxis domain={[Math.max(0, Math.floor(min - pad)), Math.ceil(max + pad)]} tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} width={44} />
+          <YAxis domain={[Math.max(0, Math.floor(min - pad)), Math.ceil(max + pad)]} tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} width={44} />
           <Tooltip
             contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 12, fontSize: 12 }}
             labelFormatter={(v) => formatShortDate(Number(v))}

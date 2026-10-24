@@ -71,10 +71,11 @@ function BodyTab() {
         <div className="flex items-end gap-2">
           <div className="flex-1">
             <div className="mb-1 text-xs text-zinc-400">Nouvelle pesée (kg)</div>
-            <NumberInput value={weight} onChange={setWeight} placeholder={last ? String(last.weight).replace('.', ',') : '75,0'} />
+            <NumberInput aria-label="Poids (kg)" value={weight} onChange={setWeight} placeholder={last ? String(last.weight).replace('.', ',') : '75,0'} />
           </div>
           <input
             type="date"
+            aria-label="Date de la pesée"
             value={date}
             max={toISODate()}
             onChange={(e) => setDate(e.target.value)}
@@ -122,7 +123,7 @@ function BodyTab() {
                 <div key={e.id} className="flex items-center border-b border-zinc-800/60 px-4 py-2 last:border-0">
                   <span className="flex-1 text-sm text-zinc-300">{formatShortDate(fromISODate(e.date))}</span>
                   <span className="font-semibold">{formatNumber(e.weight)} kg</span>
-                  <IconButton aria-label="Supprimer" onClick={() => db.bodyweights.delete(e.id)} className="ml-2 text-zinc-600">
+                  <IconButton aria-label="Supprimer" onClick={() => db.bodyweights.delete(e.id)} className="ml-2 text-zinc-400">
                     <Trash2 size={16} />
                   </IconButton>
                 </div>
@@ -219,7 +220,7 @@ function RanksTab() {
             <RankBadge result={rank} />
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{ex.name}</div>
-              <div className="text-xs text-zinc-500">
+              <div className="text-xs text-zinc-400">
                 1RM ~{formatNumber(e1rm, 0)} kg · {formatNumber(rank.ratio, 2)}× ton poids
               </div>
               <div className="mt-1.5">
@@ -229,7 +230,7 @@ function RanksTab() {
           </Card>
         ))}
       </div>
-      <p className="mt-4 text-center text-xs text-zinc-600">Rangs basés sur des standards de force indicatifs, ajustés au poids de corps et au sexe.</p>
+      <p className="mt-4 text-center text-xs text-zinc-400">Rangs basés sur des standards de force indicatifs, ajustés au poids de corps et au sexe.</p>
     </>
   )
 }
@@ -301,7 +302,7 @@ function StatsTab() {
       <Card className="h-44 p-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={perWeek} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
-            <XAxis dataKey="label" tick={{ fill: '#71717a', fontSize: 10 }} axisLine={false} tickLine={false} interval={2} />
+            <XAxis dataKey="label" tick={{ fill: '#a1a1aa', fontSize: 10 }} axisLine={false} tickLine={false} interval={2} />
             <Tooltip
               cursor={{ fill: '#27272a' }}
               contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 12, fontSize: 12 }}
@@ -315,7 +316,7 @@ function StatsTab() {
 
       <SectionTitle>Séries par muscle (30 jours)</SectionTitle>
       <Card className="space-y-2">
-        {muscleSets.length === 0 && <p className="text-sm text-zinc-500">Aucune séance ces 30 derniers jours.</p>}
+        {muscleSets.length === 0 && <p className="text-sm text-zinc-400">Aucune séance ces 30 derniers jours.</p>}
         {muscleSets.map(([m, n]) => (
           <div key={m} className="flex items-center gap-2 text-sm">
             <span className="w-24 shrink-0 truncate text-zinc-300">{MUSCLE_LABELS[m]}</span>
@@ -334,7 +335,7 @@ function StatsTab() {
         <Stat label="Moy. protéines" value={nutrition.days ? Math.round(nutrition.protein) : '—'} unit="g" />
       </Card>
       {nutrition.days > 0 && (
-        <p className="mt-2 text-xs text-zinc-500">
+        <p className="mt-2 text-xs text-zinc-400">
           Objectif : {settings.goals.kcal} kcal et {settings.goals.protein} g de protéines par jour.
         </p>
       )}

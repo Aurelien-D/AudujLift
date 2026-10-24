@@ -82,6 +82,8 @@ export interface Routine {
   createdAt: number
   updatedAt: number
   lastUsedAt?: number
+  /** Rang choisi par glisser-déposer (absent : nouvelle routine, affichée en tête) */
+  order?: number
   /** Ami qui a partagé cette routine */
   sharedBy?: string
 }

@@ -3,12 +3,14 @@ import { BookOpen, Copy, Dumbbell, History as HistoryIcon, LayoutTemplate, MoreV
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ShareRoutineSheet } from '../../components/ShareRoutine'
+import { SortableList } from '../../components/SortableList'
 import { ActionList, Button, Card, EmptyState, IconButton, Page, SectionTitle, Sheet } from '../../components/ui'
 import { db } from '../../lib/db'
 import { useActiveWorkout, useExerciseMap } from '../../lib/hooks'
 import type { Routine } from '../../lib/types'
 import { formatShortDate, uid } from '../../lib/utils'
 import { estimateDurationMin } from '../../lib/progression'
+import { applyFolderOrder, sortRoutines } from '../../lib/routine-order'
 import { startWorkout } from '../../lib/workout'
 
 export function useStartWorkout() {
@@ -23,7 +25,7 @@ export function useStartWorkout() {
 
 export default function Workouts() {
   const navigate = useNavigate()
-  const routines = useLiveQuery(() => db.routines.orderBy('updatedAt').reverse().toArray(), [])
+  const routines = useLiveQuery(async () => sortRoutines(await db.routines.toArray()), [])
   const exMap = useExerciseMap()
   const active = useActiveWorkout()
   const start = useStartWorkout()
@@ -32,13 +34,21 @@ export default function Workouts() {
 
   const duplicate = async (r: Routine) => {
     const now = Date.now()
-    await db.routines.add({ ...r, id: uid(), name: `${r.name} (copie)`, createdAt: now, updatedAt: now, lastUsedAt: undefined })
+    await db.routines.add({ ...r, id: uid(), name: `${r.name} (copie)`, createdAt: now, updatedAt: now, lastUsedAt: undefined, order: undefined })
     setMenu(null)
   }
   const remove = async (r: Routine) => {
     if (!confirm(`Supprimer la routine « ${r.name} » ?`)) return
     await db.routines.delete(r.id)
     setMenu(null)
+  }
+  // Glisser-déposer dans un dossier : toutes les routines reçoivent leur rang (sans toucher à updatedAt)
+  const reorder = async (list: Routine[]) => {
+    const ids = applyFolderOrder(
+      routines ?? [],
+      list.map((r) => r.id),
+    )
+    await db.transaction('rw', db.routines, () => Promise.all(ids.map((id, order) => db.routines.update(id, { order }))))
   }
 
   const folders = new Map<string, Routine[]>()
@@ -113,10 +123,16 @@ export default function Workouts() {
           <SectionTitle>
             {folder} <span className="text-silver-dim">({list.length})</span>
           </SectionTitle>
-          <div className="space-y-3">
-            {list.map((r) => (
-              <Card key={r.id}>
+          <SortableList
+            className="space-y-3"
+            items={list}
+            keyOf={(r) => r.id}
+            labelOf={(r) => r.name}
+            onReorder={reorder}
+            renderItem={(r, handle) => (
+              <Card>
                 <div className="flex items-start gap-2">
+                  <div className="-mt-1.5">{handle}</div>
                   <div className="min-w-0 flex-1" onClick={() => navigate(`/workouts/routine/${r.id}`)}>
                     <h3 className="truncate text-base font-semibold">
                       {r.name}
@@ -136,8 +152,8 @@ export default function Workouts() {
                   <Play size={18} className="text-gold" /> Démarrer
                 </Button>
               </Card>
-            ))}
-          </div>
+            )}
+          />
         </div>
       ))}
 

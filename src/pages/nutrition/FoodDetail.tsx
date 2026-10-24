@@ -10,6 +10,7 @@ import { defaultQuantity, MEAL_LABELS, MEALS, scaleNutrients } from '../../lib/n
 import type { Meal, Nutrients } from '../../lib/types'
 import { cn, formatNumber, toISODate } from '../../lib/utils'
 import { defaultMeal, NutriScore } from './AddFood'
+import { OffContribute } from './OffContribute'
 
 const ROWS: { key: keyof Nutrients; label: string; unit: string; indent?: boolean }[] = [
   { key: 'kcal', label: 'Énergie', unit: 'kcal' },
@@ -73,7 +74,7 @@ export default function FoodDetail() {
       actions={
         <>
           <IconButton aria-label="Favori" onClick={() => db.foods.update(food.id, { favorite: !food.favorite })}>
-            <Star size={22} className={food.favorite ? 'fill-warn text-warn' : ''} />
+            <Star size={22} className={food.favorite ? 'fill-gold text-gold' : ''} />
           </IconButton>
           <IconButton aria-label="Modifier l'aliment" onClick={() => navigate(`/nutrition/food/${food.id}/edit`)}>
             <Pencil size={20} />
@@ -164,9 +165,9 @@ export default function FoodDetail() {
         )}
       </Card>
 
-      <h2 className="mt-6 mb-2 text-sm font-semibold tracking-wide text-silver uppercase">Valeurs nutritionnelles</h2>
+      <h2 className="label mt-6 mb-2">Valeurs nutritionnelles</h2>
       <Card className="p-0">
-        <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-raised px-4 py-2 text-xs text-silver">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-line/70 px-4 py-2 text-xs text-silver">
           <span />
           <span className="text-right">100 {food.unit}</span>
           <span className="w-16 text-right">
@@ -174,7 +175,7 @@ export default function FoodDetail() {
           </span>
         </div>
         {ROWS.filter((r) => food.per100[r.key] != null).map((r) => (
-          <div key={r.key} className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-raised/50 px-4 py-2 text-sm last:border-0">
+          <div key={r.key} className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-line/50 px-4 py-2 text-sm last:border-0">
             <span className={cn(r.indent ? 'pl-3 text-silver' : 'font-medium')}>{r.label}</span>
             <span className="text-right text-silver">
               {formatNumber(food.per100[r.key]!, r.key === 'kcal' ? 0 : 1)} {r.unit}
@@ -192,6 +193,7 @@ export default function FoodDetail() {
           <NutriScore grade={food.nutriscore} />
         </span>
       </div>
+      <OffContribute food={food} />
       {food.photos && food.photos.filter(Boolean).length > 1 && (
         <div className="mt-4 grid grid-cols-2 gap-2">
           {food.photos.filter(Boolean).map((p, i) => (

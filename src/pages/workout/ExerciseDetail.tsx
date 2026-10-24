@@ -11,7 +11,7 @@ import { formatSet, setLabels } from '../../components/workout-parts'
 import { db } from '../../lib/db'
 import { EQUIPMENT_LABELS, KIND_LABELS, MUSCLE_LABELS } from '../../lib/exercises-data'
 import { useDoneWorkouts, useLatestBodyweight, useSettings } from '../../lib/hooks'
-import { bodyRegion, computeRank, e1rmForLevel, exerciseHistory, personalRecords, RANKS } from '../../lib/stats'
+import { ageFromBirthYear, bodyRegion, computeRank, e1rmForLevel, exerciseHistory, personalRecords, RANKS } from '../../lib/stats'
 import { cn, formatDate, formatNumber, formatShortDate } from '../../lib/utils'
 import { SET_TYPE_LABELS } from '../../lib/workout'
 
@@ -39,7 +39,7 @@ export default function ExerciseDetail() {
     )
 
   const strength = exercise.kind === 'weight_reps' || exercise.kind === 'bodyweight'
-  const body = { sex: settings.sex, bodyweight: bw ?? 0, heightCm: settings.heightCm }
+  const body = { sex: settings.sex, bodyweight: bw ?? 0, heightCm: settings.heightCm, age: ageFromBirthYear(settings.birthYear) }
   const region = bodyRegion(exercise)
   const rank = strength && exercise.standard && bw && pr.bestE1rm ? computeRank(pr.bestE1rm.value, exercise.standard, body, region) : undefined
 

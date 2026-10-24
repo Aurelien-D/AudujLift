@@ -199,6 +199,7 @@ export interface BodyProfile {
   sex: Sex
   bodyweight: number
   heightCm?: number
+  age?: number
 }
 
 export type BodyRegion = 'upper' | 'lower'
@@ -220,6 +221,30 @@ const REF_HEIGHT: Record<Sex, number> = { male: 176, female: 163 }
 /** DOTS est calibré sur des totaux (squat + développé couché + soulevé de terre) ; l'écart femmes/hommes est plus
  *  marqué sur le haut du corps (développé couché ≈ 60–65 % à poids égal, contre ≈ 75 % pour les jambes). */
 const FEMALE_UPPER = 0.85
+/** Coefficients d'âge officiels de la force athlétique (repris d'OpenPowerlifting) : Foster de 14 à 22 ans,
+ *  aucun entre 23 et 40, McCulloch de 41 à 90 ans. En dehors, on garde la valeur de la borne. */
+const AGE_FOSTER = [1.23, 1.18, 1.13, 1.08, 1.06, 1.04, 1.03, 1.02, 1.01] // 14 → 22
+const AGE_MCCULLOCH = [
+  1.01, 1.02, 1.031, 1.043, 1.055, 1.068, 1.082, 1.097, 1.113, 1.13, 1.147, 1.165, 1.184, 1.204, 1.225, 1.246, 1.268, 1.291, 1.315, 1.34, 1.366, 1.393, 1.421, 1.45, 1.48, 1.511,
+  1.543, 1.576, 1.61, 1.645, 1.681, 1.718, 1.756, 1.795, 1.835, 1.876, 1.918, 1.961, 2.005, 2.05, 2.096, 2.143, 2.19, 2.238, 2.287, 2.337, 2.388, 2.44, 2.494, 2.549,
+] // 41 → 90
+
+export function ageFactor(age?: number): number {
+  if (!age) return 1
+  const a = Math.round(age)
+  if (a <= 22) return AGE_FOSTER[Math.max(0, a - 14)]
+  if (a <= 40) return 1
+  return AGE_MCCULLOCH[Math.min(a, 90) - 41]
+}
+
+/** Âge à partir de la seule année de naissance : comme en compétition, on retient l'âge le moins favorable
+ *  (le plus haut pour un jeune, le plus bas pour un vétéran). */
+export function ageFromBirthYear(birthYear: number | undefined, now = new Date()): number | undefined {
+  if (!birthYear || birthYear < 1900) return undefined
+  const diff = now.getFullYear() - birthYear
+  return diff > 30 ? diff - 1 : diff
+}
+
 const LOWER_BODY = new Set<string>(['quadriceps', 'ischios', 'fessiers', 'mollets', 'adducteurs', 'lombaires'])
 
 /** Haut ou bas du corps : le soulevé de terre (dos + ischios/fessiers) compte comme bas du corps. */
@@ -227,15 +252,16 @@ export function bodyRegion(ex: Pick<Exercise, 'muscle' | 'secondary'>): BodyRegi
   return LOWER_BODY.has(ex.muscle) || ex.secondary.some((m) => m === 'quadriceps' || m === 'ischios' || m === 'fessiers') ? 'lower' : 'upper'
 }
 
-/** Multiplicateur qui ramène un 1RM à celui, de même niveau, d'un homme de 80 kg et 1,76 m.
+/** Multiplicateur qui ramène un 1RM à celui, de même niveau, d'un homme de 80 kg et 1,76 m, âgé de 23 à 40 ans.
  *  - sexe et poids : formule DOTS (non linéaire : les lourds ne sont pas pénalisés comme avec un simple ratio) ;
  *  - taille : à poids égal, une personne plus grande a moins de section musculaire par centimètre et des leviers
- *    plus longs ; correction modérée (racine carrée), plafonnée à ±8 %. */
+ *    plus longs ; correction modérée (racine carrée), plafonnée à ±8 % ;
+ *  - âge : coefficients Foster (moins de 23 ans) et McCulloch (plus de 40 ans). */
 export function strengthFactor(body: BodyProfile, region: BodyRegion = 'upper'): number {
   const dots = dotsDenominator('male', REF_BODYWEIGHT) / dotsDenominator(body.sex, body.bodyweight)
   const female = body.sex === 'female' && region === 'upper' ? 1 / FEMALE_UPPER : 1
   const height = body.heightCm && body.heightCm > 100 ? Math.min(1.08, Math.max(0.92, Math.sqrt(body.heightCm / REF_HEIGHT[body.sex]))) : 1
-  return dots * female * height
+  return dots * female * height * ageFactor(body.age)
 }
 
 /** Rang correspondant à un niveau (fraction du standard). */

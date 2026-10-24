@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { bodyRegion, computeRank, detectPRs, e1rm, e1rmForLevel, exerciseHistory, personalRecords, platesPerSide, rankFromLevel, rankFromScore, weeklyStreak } from './stats'
+import {
+  ageFactor,
+  ageFromBirthYear,
+  bodyRegion,
+  computeRank,
+  detectPRs,
+  e1rm,
+  e1rmForLevel,
+  exerciseHistory,
+  personalRecords,
+  platesPerSide,
+  rankFromLevel,
+  rankFromScore,
+  weeklyStreak,
+} from './stats'
 import type { Exercise, Workout } from './types'
 
 const bench: Exercise = { id: 'bench-press', name: 'Développé couché', muscle: 'pectoraux', secondary: [], equipment: 'barre', kind: 'weight_reps', standard: 1.25 }
@@ -102,6 +116,24 @@ describe('rangs', () => {
   it('bas du corps : le soulevé de terre compte comme jambes', () => {
     expect(bodyRegion({ muscle: 'dos', secondary: ['ischios', 'fessiers'] })).toBe('lower')
     expect(bodyRegion({ muscle: 'dos', secondary: ['biceps'] })).toBe('upper')
+  })
+  it('âge : coefficients Foster et McCulloch, neutres de 23 à 40 ans', () => {
+    expect(ageFactor(30)).toBe(1)
+    expect(ageFactor(40)).toBe(1)
+    expect(ageFactor(18)).toBe(1.06)
+    expect(ageFactor(10)).toBe(1.23)
+    expect(ageFactor(50)).toBe(1.13)
+    expect(ageFactor(60)).toBe(1.34)
+    expect(ageFactor(95)).toBe(2.549)
+    expect(ageFactor(undefined)).toBe(1)
+    // À 60 ans, il faut 34 % de moins pour le même rang
+    expect(e1rmForLevel(1, 1.25, { ...man80, age: 60 })).toBeCloseTo(100 / 1.34)
+  })
+  it("âge depuis l'année de naissance : le moins favorable", () => {
+    const now = new Date(2026, 5, 1)
+    expect(ageFromBirthYear(2008, now)).toBe(18) // jeune : âge le plus haut
+    expect(ageFromBirthYear(1976, now)).toBe(49) // vétéran : âge le plus bas
+    expect(ageFromBirthYear(0, now)).toBeUndefined()
   })
   it('rang global : moyenne des scores', () => {
     expect(rankFromScore(rankFromLevel(0.7).score).label).toBe('Or II')

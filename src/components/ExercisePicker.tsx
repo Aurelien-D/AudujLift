@@ -28,10 +28,7 @@ export function ExerciseThumb({ exercise, selected }: { exercise: Exercise; sele
   const [img] = exerciseImages(exercise)
   return (
     <div
-      className={cn(
-        'flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold',
-        selected ? 'bg-lime-400 text-zinc-950' : 'bg-zinc-800 text-zinc-300',
-      )}
+      className={cn('flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold', selected ? 'bg-gold text-ink' : 'bg-raised text-ivory-dim')}
     >
       {selected ? <Check size={20} /> : img ? <img src={img} alt="" loading="lazy" className="size-full object-cover" /> : exercise.name.charAt(0)}
     </div>
@@ -55,11 +52,11 @@ export function MuscleChips({ value, onChange }: { value: MuscleGroup | 'all'; o
 
 export function ExerciseRow({ exercise, selected, onClick, right }: { exercise: Exercise; selected?: boolean; onClick: () => void; right?: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={cn('flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition active:bg-zinc-800', selected && 'bg-lime-400/10')}>
+    <button onClick={onClick} className={cn('flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition active:bg-raised', selected && 'bg-gold/10')}>
       <ExerciseThumb exercise={exercise} selected={selected} />
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium">{exercise.name}</div>
-        <div className="truncate text-xs text-zinc-400">
+        <div className="truncate text-xs text-silver">
           {MUSCLE_LABELS[exercise.muscle]} · {EQUIPMENT_LABELS[exercise.equipment]}
           {exercise.custom && ' · Perso'}
         </div>
@@ -107,10 +104,10 @@ export function ExercisePicker({
 
   return (
     <Sheet open={open} onClose={close} title={title} full>
-      <div className="sticky top-0 z-10 -mx-4 bg-zinc-900 px-4 pb-1">
+      <div className="sticky top-0 z-10 -mx-4 bg-surface px-4 pb-1">
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
-            <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
+            <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-silver" />
             <input
               value={query}
               onChange={(e) => {
@@ -125,8 +122,8 @@ export function ExercisePicker({
         </div>
         <MuscleChips value={muscle} onChange={setMuscle} />
       </div>
-      <button onClick={() => setCreating(true)} className="mb-1 flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left text-lime-400 active:bg-zinc-800">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-lime-400/15">
+      <button onClick={() => setCreating(true)} className="mb-1 flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left text-gold active:bg-raised">
+        <div className="flex size-10 items-center justify-center rounded-xl bg-gold/15">
           <Plus size={20} />
         </div>
         Créer un exercice personnalisé
@@ -139,9 +136,9 @@ export function ExercisePicker({
           Afficher plus ({list.length - limit} restants)
         </Button>
       )}
-      {list.length === 0 && <p className="py-8 text-center text-sm text-zinc-400">Aucun exercice trouvé.</p>}
+      {list.length === 0 && <p className="py-8 text-center text-sm text-silver">Aucun exercice trouvé.</p>}
       {multiple && selected.length > 0 && (
-        <div className="sticky bottom-0 -mx-4 bg-gradient-to-t from-zinc-900 via-zinc-900 px-4 pt-6 pb-1">
+        <div className="sticky bottom-0 -mx-4 bg-gradient-to-t from-surface via-surface px-4 pt-6 pb-1">
           <Button
             variant="primary"
             size="lg"

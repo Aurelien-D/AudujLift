@@ -87,6 +87,8 @@ export interface WorkoutExercise {
   restSec: number
   notes?: string
   supersetId?: string
+  /** Charge augmentée automatiquement (toutes les reps réussies la dernière fois) */
+  progression?: { from: number; to: number }
 }
 
 export interface Workout {
@@ -132,6 +134,8 @@ export interface Food {
   nutriscore?: string
   favorite?: boolean
   lastUsedAt?: number
+  /** Dernière quantité consommée (proposée par défaut la fois suivante) */
+  lastQuantity?: number
   createdAt: number
 }
 
@@ -153,6 +157,41 @@ export interface FoodEntry {
 export interface DayLog {
   date: string
   waterMl: number
+  /** Type de journée choisi à la main (sinon : entraînement si une séance a eu lieu) */
+  dayType?: 'training' | 'rest'
+}
+
+/** Repas favori / recette : un ensemble d'aliments à ajouter en un geste */
+export interface SavedMeal {
+  id: string
+  name: string
+  items: Omit<FoodEntry, 'id' | 'date' | 'meal' | 'createdAt'>[]
+  createdAt: number
+  lastUsedAt?: number
+}
+
+/** Mensurations (cm), toutes optionnelles */
+export interface Measurement {
+  id: string
+  date: string
+  waist?: number
+  chest?: number
+  hips?: number
+  arm?: number
+  thigh?: number
+  calf?: number
+  neck?: number
+  shoulders?: number
+  bodyFat?: number
+}
+
+export interface ProgressPhoto {
+  id: string
+  date: string
+  pose: 'front' | 'side' | 'back'
+  /** JPEG compressé (data URL) */
+  dataUrl: string
+  createdAt: number
 }
 
 export interface BodyWeight {
@@ -180,4 +219,17 @@ export interface Settings {
   barWeight: number
   availablePlates: number[]
   onboarded: boolean
+  /** Garder l'écran allumé pendant une séance */
+  keepAwake: boolean
+  /** Proposer de noter l'effort (RPE) après chaque série */
+  askRpe: boolean
+  /** Surcharge progressive automatique (+2,5 kg) */
+  autoProgression: boolean
+  /** Objectifs distincts les jours de repos (les objectifs principaux valent pour les jours d'entraînement) */
+  splitGoals: boolean
+  restGoals: { kcal: number; protein: number; carbs: number; fat: number }
+  /** Dernier export de sauvegarde (timestamp) */
+  lastBackupAt?: number
+  /** Suggestion d'ajustement des calories masquée jusqu'à… */
+  tdeeSnoozeUntil?: number
 }

@@ -66,15 +66,15 @@ export default function ExerciseDetail() {
       }
     >
       <div className="flex flex-wrap gap-1.5 text-xs">
-        <span className="rounded-full bg-lime-400/15 px-2.5 py-1 text-lime-300">{MUSCLE_LABELS[exercise.muscle]}</span>
+        <span className="rounded-full bg-gold/15 px-2.5 py-1 text-gold-pale">{MUSCLE_LABELS[exercise.muscle]}</span>
         {exercise.secondary.map((m) => (
-          <span key={m} className="rounded-full bg-zinc-800 px-2.5 py-1 text-zinc-300">
+          <span key={m} className="rounded-full bg-raised px-2.5 py-1 text-ivory-dim">
             {MUSCLE_LABELS[m]}
           </span>
         ))}
-        <span className="rounded-full bg-zinc-800 px-2.5 py-1 text-zinc-400">{KIND_LABELS[exercise.kind]}</span>
+        <span className="rounded-full bg-raised px-2.5 py-1 text-silver">{KIND_LABELS[exercise.kind]}</span>
       </div>
-      {exercise.notes && <p className="mt-3 text-sm text-amber-200/80">{exercise.notes}</p>}
+      {exercise.notes && <p className="mt-3 text-sm text-gold-pale/80">{exercise.notes}</p>}
       <ExerciseGuide exercise={exercise} />
 
       {strength && exercise.standard && (
@@ -83,30 +83,30 @@ export default function ExerciseDetail() {
             <div className="flex items-center gap-4">
               <RankBadge result={rank} size="lg" />
               <div className="min-w-0 flex-1">
-                <div className="text-xs text-zinc-400">Ton rang</div>
-                <div className="text-xl font-black" style={{ color: rank.rank.color }}>
+                <div className="text-xs text-silver">Ton rang</div>
+                <div className="font-display text-xl font-semibold" style={{ color: rank.rank.color }}>
                   {rank.rank.name}
                 </div>
                 <div className="mt-1">
                   <RankProgress result={rank} />
                 </div>
                 {rank.next && bw && (
-                  <p className="mt-1.5 text-xs text-zinc-400">
+                  <p className="mt-1.5 text-xs text-silver">
                     {rank.next.name} à {formatNumber(e1rmForRank(rank.next, bw, exercise.standard, settings.sex), 0)} kg de 1RM estimé
                   </p>
                 )}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-silver">
               {bw ? 'Fais une séance avec cet exercice pour obtenir ton rang.' : 'Renseigne ton poids de corps (onglet Progrès) pour débloquer les rangs.'}
             </p>
           )}
-          <details className="mt-3 text-xs text-zinc-400">
+          <details className="mt-3 text-xs text-silver">
             <summary className="cursor-pointer">Barème des rangs</summary>
             <div className="mt-2 grid grid-cols-3 gap-1">
               {RANKS.map((r) => (
-                <div key={r.key} className="flex justify-between rounded bg-zinc-950/60 px-2 py-1">
+                <div key={r.key} className="flex justify-between rounded bg-ink/60 px-2 py-1">
                   <span style={{ color: r.color }}>{r.name}</span>
                   <span>{bw ? `${formatNumber(e1rmForRank(r, bw, exercise.standard!, settings.sex), 0)} kg` : `${formatNumber(r.min * exercise.standard!, 2)}×PDC`}</span>
                 </div>
@@ -156,8 +156,8 @@ export default function ExerciseDetail() {
                   <SectionTitle>Meilleure charge par nombre de reps</SectionTitle>
                   <Card className="grid grid-cols-4 gap-2 p-3 text-center">
                     {Object.entries(pr.repMaxes).map(([reps, v]) => (
-                      <div key={reps} className="rounded-lg bg-zinc-950/60 py-2">
-                        <div className="text-[11px] text-zinc-400">{reps} RM</div>
+                      <div key={reps} className="rounded-lg bg-ink/60 py-2">
+                        <div className="text-[11px] text-silver">{reps} RM</div>
                         <div className="font-semibold">{formatNumber(v.weight)}</div>
                       </div>
                     ))}
@@ -175,9 +175,9 @@ export default function ExerciseDetail() {
                 <Card key={s.workoutId} className="p-3" onClick={() => navigate(`/workouts/history/${s.workoutId}`)}>
                   <div className="flex justify-between text-sm">
                     <span className="font-medium">{formatDate(s.date)}</span>
-                    {s.bestE1rm > 0 && <span className="text-xs text-zinc-400">1RM ~{formatNumber(s.bestE1rm)} kg</span>}
+                    {s.bestE1rm > 0 && <span className="text-xs text-silver">1RM ~{formatNumber(s.bestE1rm)} kg</span>}
                   </div>
-                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-zinc-300">
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-ivory-dim">
                     {s.sets.map((set, i) => (
                       <span key={i}>
                         <span className={cn('mr-1 text-xs font-bold', SET_TYPE_LABELS[set.type].color)}>{labels[i]}</span>
@@ -189,7 +189,7 @@ export default function ExerciseDetail() {
               )
             })}
           </div>
-          {history.length > 30 && <p className="mt-2 text-center text-xs text-zinc-400">Depuis le {formatShortDate(history.at(-1)!.date)}</p>}
+          {history.length > 30 && <p className="mt-2 text-center text-xs text-silver">Depuis le {formatShortDate(history.at(-1)!.date)}</p>}
         </>
       )}
 

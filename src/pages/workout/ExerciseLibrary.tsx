@@ -38,7 +38,7 @@ export default function ExerciseLibrary() {
     >
       <div className="flex gap-2">
         <div className="relative min-w-0 flex-1">
-          <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
+          <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-silver" />
           <input
             value={query}
             onChange={(e) => {
@@ -58,7 +58,7 @@ export default function ExerciseLibrary() {
             key={e.id}
             exercise={e}
             onClick={() => navigate(`/exercises/${e.id}`)}
-            right={usage.get(e.id) ? <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">{usage.get(e.id)}×</span> : null}
+            right={usage.get(e.id) ? <span className="rounded-full bg-raised px-2 py-0.5 text-xs text-silver">{usage.get(e.id)}×</span> : null}
           />
         ))}
       </div>
@@ -67,7 +67,7 @@ export default function ExerciseLibrary() {
           Afficher plus ({list.length - limit} restants)
         </Button>
       )}
-      {list.length === 0 && <p className="py-8 text-center text-sm text-zinc-400">Aucun exercice trouvé.</p>}
+      {list.length === 0 && <p className="py-8 text-center text-sm text-silver">Aucun exercice trouvé.</p>}
       {creating && <ExerciseForm open initialName={query} onClose={() => setCreating(false)} onSaved={(e) => navigate(`/exercises/${e.id}`)} />}
     </Page>
   )

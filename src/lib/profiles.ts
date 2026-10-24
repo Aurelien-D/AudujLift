@@ -14,7 +14,10 @@ const ACTIVE_KEY = 'audujlift.activeProfile'
 /** Le premier profil réutilise la base d'origine, pour conserver les données existantes. */
 export const DEFAULT_PROFILE_ID = 'default'
 
-export const PROFILE_COLORS = ['#a3e635', '#f472b6', '#38bdf8', '#fbbf24', '#a78bfa', '#fb7185']
+export const PROFILE_COLORS = ['#D6B56E', '#D98FA8', '#6FAFC9', '#E0A458', '#A58AD0', '#E06B62']
+
+/** Couleurs de l'ancienne charte → nouvelle palette (profils déjà créés) */
+const LEGACY_COLORS: Record<string, string> = { '#a3e635': '#D6B56E', '#f472b6': '#D98FA8', '#38bdf8': '#6FAFC9', '#fbbf24': '#E0A458', '#a78bfa': '#A58AD0', '#fb7185': '#E06B62' }
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -27,7 +30,7 @@ function read<T>(key: string, fallback: T): T {
 
 export function listProfiles(): Profile[] {
   const list = read<Profile[]>(LIST_KEY, [])
-  return list.length ? list : [{ id: DEFAULT_PROFILE_ID, name: 'Moi', color: PROFILE_COLORS[0] }]
+  return list.length ? list.map((p) => ({ ...p, color: LEGACY_COLORS[p.color] ?? p.color })) : [{ id: DEFAULT_PROFILE_ID, name: 'Moi', color: PROFILE_COLORS[0] }]
 }
 
 function saveProfiles(list: Profile[]) {

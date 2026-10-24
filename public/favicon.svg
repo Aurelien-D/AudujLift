@@ -1,17 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#a3e635"/>
-      <stop offset="1" stop-color="#22d3ee"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="#09090b"/>
-  <g fill="url(#g)">
-    <rect x="72" y="196" width="40" height="120" rx="12"/>
-    <rect x="120" y="164" width="44" height="184" rx="14"/>
-    <rect x="348" y="164" width="44" height="184" rx="14"/>
-    <rect x="400" y="196" width="40" height="120" rx="12"/>
-    <rect x="164" y="238" width="184" height="36" rx="10"/>
-  </g>
-  <path d="M256 96 l40 64 h-26 v40 h-28 v-40 h-26z" fill="url(#g)"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 80 80"><defs><radialGradient id="g" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#1a1d25"/><stop offset="1" stop-color="#0B0D12"/></radialGradient><mask id="m"><rect x="-8" y="-8" width="80" height="80" fill="#fff"/><path d="M45 4 L35.5 25 L40 29.5 L27 47 L30.5 50 L21 62" fill="none" stroke="#000" stroke-width="2.6"/></mask></defs><rect x="-8" y="-8" width="80" height="80" rx="17.6" fill="url(#g)"/><g mask="url(#m)" fill="#D6B56E"><path d="M29.41 15.20L32.00 2.00L34.59 15.20ZM38.71 16.38L44.75 9.92L42.17 18.38ZM45.62 21.83L54.08 19.25L47.62 25.29ZM48.80 29.41L62.00 32.00L48.80 34.59ZM47.62 38.71L54.08 44.75L45.62 42.17ZM42.17 45.62L44.75 54.08L38.71 47.62ZM34.59 48.80L32.00 62.00L29.41 48.80ZM25.29 47.62L19.25 54.08L21.83 45.62ZM18.38 42.17L9.92 44.75L16.38 38.71ZM15.20 34.59L2.00 32.00L15.20 29.41ZM16.38 25.29L9.92 19.25L18.38 21.83ZM21.83 18.38L19.25 9.92L25.29 16.38Z"/><circle cx="32" cy="32" r="12.5"/><circle cx="32" cy="32" r="15" fill="none" stroke="#D6B56E" stroke-width="1.2" opacity="0.55"/></g></svg>

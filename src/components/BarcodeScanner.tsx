@@ -138,22 +138,18 @@ export function BarcodeScanner({ open, onClose, onDetected }: { open: boolean; o
           <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-black">
             <video ref={videoRef} playsInline muted className="size-full object-cover" />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative h-32 w-4/5 rounded-2xl border-2 border-lime-400/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]">
-                <div className="absolute inset-x-3 top-1/2 h-0.5 animate-pulse bg-rose-500/80" />
+              <div className="relative h-32 w-4/5 rounded-2xl border-2 border-gold/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]">
+                <div className="absolute inset-x-3 top-1/2 h-0.5 animate-pulse bg-danger/80" />
               </div>
             </div>
-            {error && <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-6 text-center text-sm text-rose-300">{error}</div>}
+            {error && <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-6 text-center text-sm text-danger">{error}</div>}
             {torch !== null && (
-              <button
-                onClick={toggleTorch}
-                aria-label="Lampe"
-                className={cn('absolute right-3 bottom-3 rounded-full p-3', torch ? 'bg-amber-300 text-zinc-950' : 'bg-black/60 text-white')}
-              >
+              <button onClick={toggleTorch} aria-label="Lampe" className={cn('absolute right-3 bottom-3 rounded-full p-3', torch ? 'bg-warn text-ink' : 'bg-black/60 text-white')}>
                 <Flashlight size={20} />
               </button>
             )}
           </div>
-          <p className="mt-3 text-center text-sm text-zinc-400">Place le code-barres dans le cadre</p>
+          <p className="mt-3 text-center text-sm text-silver">Place le code-barres dans le cadre</p>
           <Button variant="ghost" className="mt-2 w-full" onClick={() => setManual(true)}>
             <Keyboard size={18} /> Saisir le code à la main
           </Button>

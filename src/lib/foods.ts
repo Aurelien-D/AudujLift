@@ -2,7 +2,7 @@ import { db } from './db'
 import { scaleNutrients } from './nutrition'
 import { fetchProductByBarcode } from './off'
 import { findPopularByBarcode } from './offline-products'
-import type { Food, FoodEntry, Meal } from './types'
+import type { Food, FoodEntry, Meal, SavedMeal } from './types'
 import { uid } from './utils'
 
 /** Enregistre un aliment issu d'Open Food Facts s'il n'est pas déjà en base (dédoublonné par code-barres). */
@@ -53,5 +53,24 @@ export async function logFood(food: Food, quantity: number, date: string, meal: 
     if (prev) entry.createdAt = prev.createdAt
   }
   await db.entries.put(entry)
-  await db.foods.update(food.id, { lastUsedAt: Date.now() })
+  await db.foods.update(food.id, quantity > 0 ? { lastUsedAt: Date.now(), lastQuantity: quantity } : { lastUsedAt: Date.now() })
+}
+
+/** Ajoute tous les aliments d'un repas favori au journal. */
+export async function logSavedMeal(saved: SavedMeal, date: string, meal: Meal) {
+  const now = Date.now()
+  await db.entries.bulkAdd(saved.items.map((it, i) => ({ ...it, id: uid(), date, meal, createdAt: now + i })))
+  await db.meals.update(saved.id, { lastUsedAt: now })
+}
+
+/** Enregistre les aliments d'un repas du journal comme repas favori. */
+export async function saveMealFromEntries(name: string, entries: FoodEntry[]): Promise<SavedMeal> {
+  const saved: SavedMeal = {
+    id: uid(),
+    name,
+    items: entries.map(({ foodId, name, brand, quantity, unit, nutrients }) => ({ foodId, name, brand, quantity, unit, nutrients })),
+    createdAt: Date.now(),
+  }
+  await db.meals.add(saved)
+  return saved
 }

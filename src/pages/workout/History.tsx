@@ -1,11 +1,11 @@
-import { ChevronLeft, ChevronRight, History as HistoryIcon } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, EmptyState, IconButton, Page, SectionTitle } from '../../components/ui'
 import { useDoneWorkouts, useExerciseMap } from '../../lib/hooks'
-import { workoutTotals } from '../../lib/stats'
+import { detectPRs, workoutTotals } from '../../lib/stats'
 import type { Workout } from '../../lib/types'
-import { capitalize, cn, formatDate, formatDuration, formatNumber, toISODate } from '../../lib/utils'
+import { capitalize, cn, formatDuration, formatNumber, formatTime, toISODate } from '../../lib/utils'
 
 const monthFmt = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
 
@@ -34,7 +34,7 @@ export function MonthCalendar({ workouts, onDay }: { workouts: Workout[]; onDay?
         </IconButton>
         <div className="text-center">
           <div className="font-semibold">{capitalize(monthFmt.format(cursor))}</div>
-          <div className="text-xs text-zinc-400">
+          <div className="text-xs text-silver">
             {count} jour{count > 1 ? 's' : ''} d'entraînement
           </div>
         </div>
@@ -42,7 +42,7 @@ export function MonthCalendar({ workouts, onDay }: { workouts: Workout[]; onDay?
           <ChevronRight size={20} />
         </IconButton>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-zinc-400">
+      <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-silver">
         {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
           <div key={i}>{d}</div>
         ))}
@@ -59,8 +59,8 @@ export function MonthCalendar({ workouts, onDay }: { workouts: Workout[]; onDay?
               onClick={() => ws && onDay?.(ws[0])}
               className={cn(
                 'flex aspect-square items-center justify-center rounded-lg text-sm',
-                ws ? 'bg-gradient-accent font-bold text-zinc-950' : 'text-zinc-400',
-                key === today && !ws && 'ring-1 ring-lime-400/60',
+                ws ? 'bg-gold font-semibold text-ink' : 'text-silver',
+                key === today && !ws && 'ring-1 ring-gold/60',
               )}
             >
               {i + 1}
@@ -71,6 +71,8 @@ export function MonthCalendar({ workouts, onDay }: { workouts: Workout[]; onDay?
     </Card>
   )
 }
+
+const weekdayFmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' })
 
 export default function History() {
   const navigate = useNavigate()
@@ -86,45 +88,75 @@ export default function History() {
     return [...m.entries()]
   }, [workouts])
 
+  /** Nombre de records battus par séance */
+  const prCount = useMemo(() => {
+    const m = new Map<string, number>()
+    if (!workouts || !exMap.size) return m
+    for (const w of workouts) {
+      const n = detectPRs(w, workouts, exMap, w.bodyweight).length
+      if (n) m.set(w.id, n)
+    }
+    return m
+  }, [workouts, exMap])
+
   return (
     <Page title="Historique" back="/workouts">
       <MonthCalendar workouts={workouts ?? []} onDay={(w) => navigate(`/workouts/history/${w.id}`)} />
       {workouts?.length === 0 && (
         <div className="mt-4">
-          <EmptyState icon={<HistoryIcon size={40} />} title="Aucune séance enregistrée">
-            Tes séances terminées apparaîtront ici.
-          </EmptyState>
+          <EmptyState title="Aucune séance enregistrée">Tes séances terminées apparaîtront ici, avec leurs records.</EmptyState>
         </div>
       )}
       {groups.map(([month, list]) => (
         <div key={month}>
           <SectionTitle>
-            {month} <span className="text-zinc-400">· {list.length} séances</span>
+            {month}{' '}
+            <span className="font-normal tracking-normal normal-case text-silver-dim">
+              · {list.length} séance{list.length > 1 ? 's' : ''}
+            </span>
           </SectionTitle>
-          <div className="space-y-2">
+          <ol className="relative ml-[22px] border-l border-line/80">
             {list.map((w) => {
               const t = workoutTotals(w, exMap)
+              const prs = prCount.get(w.id) ?? 0
+              const d = new Date(w.startedAt)
               return (
-                <Card key={w.id} onClick={() => navigate(`/workouts/history/${w.id}`)} className="p-3">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="truncate font-semibold">{w.name}</h3>
-                    <span className="shrink-0 text-xs text-zinc-400">{formatDate(w.startedAt)}</span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-zinc-400">
-                    {formatDuration(t.durationMs)} · {formatNumber(t.volume, 0)} kg · {t.sets} séries
-                  </p>
-                  <ul className="mt-2 space-y-0.5 text-sm text-zinc-300">
-                    {w.exercises.slice(0, 4).map((e) => (
-                      <li key={e.uid} className="truncate">
-                        <span className="text-zinc-400">{e.sets.length} ×</span> {exMap.get(e.exerciseId)?.name}
-                      </li>
-                    ))}
-                    {w.exercises.length > 4 && <li className="text-xs text-zinc-400">+ {w.exercises.length - 4} autres</li>}
-                  </ul>
-                </Card>
+                <li key={w.id} className="relative pb-3 pl-5 last:pb-0">
+                  <span className={cn('absolute top-4 -left-[5px] size-2.5 rounded-full ring-4 ring-ink', prs ? 'bg-amethyst-light' : 'bg-gold')} />
+                  <button
+                    onClick={() => navigate(`/workouts/history/${w.id}`)}
+                    className="press w-full rounded-[18px] border border-line/70 bg-surface p-3.5 text-left active:bg-raised/60"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 shrink-0 text-center">
+                        <div className="font-display text-xl leading-none font-semibold text-ivory">{d.getDate()}</div>
+                        <div className="mt-0.5 text-[11px] text-silver uppercase">{weekdayFmt.format(d).replace('.', '')}</div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="truncate font-semibold">{w.name}</h3>
+                          {prs > 0 && (
+                            <span className="flex shrink-0 items-center gap-1 rounded-full border border-amethyst/50 px-2 py-0.5 text-[11px] font-medium text-amethyst-light">
+                              <Trophy size={11} /> {prs}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-xs text-silver">
+                          {formatTime(w.startedAt)} · {formatDuration(t.durationMs)} · {formatNumber(t.volume, 0)} kg · {t.sets} séries
+                        </p>
+                        <p className="mt-1.5 line-clamp-2 text-sm text-ivory-dim">
+                          {w.exercises
+                            .map((e) => exMap.get(e.exerciseId)?.name)
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                </li>
               )
             })}
-          </div>
+          </ol>
         </div>
       ))}
     </Page>

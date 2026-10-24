@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App.tsx'
 import { reloadForNewVersion } from './components/ErrorBoundary'
+import '@fontsource-variable/inter'
+import '@fontsource-variable/space-grotesk'
 import './index.css'
 
 // Mises à jour : la nouvelle version s'installe et l'appli se recharge automatiquement.

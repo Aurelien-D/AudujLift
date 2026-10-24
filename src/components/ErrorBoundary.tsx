@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import { SolarSigil } from './SolarSigil'
 
 const RELOAD_KEY = 'audujlift.chunkReloadAt'
 
@@ -43,14 +44,14 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     const chunk = isChunkLoadError(error)
     return (
       <div className="pt-safe mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center gap-4 px-6 text-center">
-        <div className="text-4xl">{chunk ? '🔄' : '😕'}</div>
-        <h1 className="text-xl font-bold">{chunk ? 'Nouvelle version disponible' : "Oups, quelque chose s'est mal passé"}</h1>
-        <p className="text-sm text-zinc-400">
+        <SolarSigil size={48} className={chunk ? 'text-gold' : 'text-silver-dim'} />
+        <h1 className="text-xl font-semibold">{chunk ? 'Nouvelle version disponible' : "Oups, quelque chose s'est mal passé"}</h1>
+        <p className="text-sm text-silver">
           {chunk ? "L'appli a été mise à jour. Recharge-la pour continuer." : "Recharge l'appli. Si le problème revient, envoie une capture de cet écran."}
         </p>
-        {!chunk && <pre className="max-h-32 w-full overflow-auto rounded-xl bg-zinc-900 p-3 text-left text-xs whitespace-pre-wrap text-rose-300">{error.message}</pre>}
+        {!chunk && <pre className="max-h-32 w-full overflow-auto rounded-xl bg-surface p-3 text-left text-xs whitespace-pre-wrap text-danger">{error.message}</pre>}
         <div className="flex gap-2">
-          <button onClick={() => location.reload()} className="bg-gradient-accent rounded-xl px-5 py-3 font-semibold text-zinc-950">
+          <button onClick={() => location.reload()} className="press rounded-xl bg-gold px-5 py-3 font-semibold text-ink">
             Recharger
           </button>
           <button
@@ -58,7 +59,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
               location.hash = '#/'
               location.reload()
             }}
-            className="rounded-xl bg-zinc-800 px-5 py-3 font-medium"
+            className="press rounded-xl border border-line bg-raised px-5 py-3 font-medium"
           >
             Accueil
           </button>

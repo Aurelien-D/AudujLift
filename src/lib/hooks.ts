@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { DEFAULT_SETTINGS, db, getSettings } from './db'
 import type { Exercise, Settings } from './types'
+import { fromISODate } from './utils'
 
 export function useSettings(): Settings {
   return useLiveQuery(getSettings, [], DEFAULT_SETTINGS)
@@ -26,6 +27,23 @@ export function useActiveWorkout() {
 
 export function useLatestBodyweight(): number | undefined {
   return useLiveQuery(async () => (await db.bodyweights.orderBy('date').last())?.weight, [])
+}
+
+/** Jour d'entraînement ? Choix manuel s'il existe, sinon vrai si une séance a eu lieu ce jour-là. */
+export function useDayType(date: string): { training: boolean; manual: boolean } {
+  const start = fromISODate(date).getTime()
+  const count = useLiveQuery(
+    () =>
+      db.workouts
+        .where('startedAt')
+        .between(start, start + 86400000)
+        .count(),
+    [start],
+    0,
+  )
+  const day = useLiveQuery(() => db.days.get(date), [date])
+  if (day?.dayType) return { training: day.dayType === 'training', manual: true }
+  return { training: count > 0, manual: false }
 }
 
 /** Re-render chaque seconde (chronos). */

@@ -2,8 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
-import { TrendChart } from '../../components/charts'
+import { BarsChart, TrendChart } from '../../components/charts'
+import { Measurements, ProgressPhotos } from './BodyExtras'
 import { RankBadge, RankProgress } from '../../components/RankBadge'
 import { Button, Card, EmptyState, IconButton, NumberInput, Page, SectionTitle, Stat, Tabs } from '../../components/ui'
 import { db } from '../../lib/db'
@@ -70,7 +70,7 @@ function BodyTab() {
       <Card>
         <div className="flex items-end gap-2">
           <div className="flex-1">
-            <div className="mb-1 text-xs text-zinc-400">Nouvelle pesée (kg)</div>
+            <div className="mb-1 text-xs text-silver">Nouvelle pesée (kg)</div>
             <NumberInput aria-label="Poids (kg)" value={weight} onChange={setWeight} placeholder={last ? String(last.weight).replace('.', ',') : '75,0'} />
           </div>
           <input
@@ -79,7 +79,7 @@ function BodyTab() {
             value={date}
             max={toISODate()}
             onChange={(e) => setDate(e.target.value)}
-            className="h-[46px] rounded-xl border border-zinc-800 bg-zinc-950 px-2 text-sm"
+            className="h-[46px] rounded-xl border border-line bg-ink px-2 text-sm text-ivory"
           />
           <Button variant="primary" className="h-[46px]" disabled={!weight} onClick={add}>
             OK
@@ -92,7 +92,7 @@ function BodyTab() {
         <Stat label="Moy. 7 j" value={avg7 ? formatNumber(avg7) : '—'} unit="kg" />
         <Stat
           label="vs sem. préc."
-          value={delta != null ? <span className={delta > 0 ? 'text-amber-300' : 'text-lime-300'}>{`${delta > 0 ? '+' : ''}${formatNumber(delta)}`}</span> : '—'}
+          value={delta != null ? <span className={delta > 0 ? 'text-warn' : 'text-gold-pale'}>{`${delta > 0 ? '+' : ''}${formatNumber(delta)}`}</span> : '—'}
           unit="kg"
         />
       </Card>
@@ -112,6 +112,9 @@ function BodyTab() {
         </div>
       </Card>
 
+      <Measurements />
+      <ProgressPhotos />
+
       {list.length > 0 && (
         <>
           <SectionTitle>Pesées</SectionTitle>
@@ -120,10 +123,10 @@ function BodyTab() {
               .reverse()
               .slice(0, 30)
               .map((e) => (
-                <div key={e.id} className="flex items-center border-b border-zinc-800/60 px-4 py-2 last:border-0">
-                  <span className="flex-1 text-sm text-zinc-300">{formatShortDate(fromISODate(e.date))}</span>
+                <div key={e.id} className="flex items-center border-b border-raised/60 px-4 py-2 last:border-0">
+                  <span className="flex-1 text-sm text-ivory-dim">{formatShortDate(fromISODate(e.date))}</span>
                   <span className="font-semibold">{formatNumber(e.weight)} kg</span>
-                  <IconButton aria-label="Supprimer" onClick={() => db.bodyweights.delete(e.id)} className="ml-2 text-zinc-400">
+                  <IconButton aria-label="Supprimer" onClick={() => db.bodyweights.delete(e.id)} className="ml-2 text-silver">
                     <Trash2 size={16} />
                   </IconButton>
                 </div>
@@ -183,8 +186,8 @@ function RanksTab() {
       <Card className="flex items-center gap-4">
         <RankBadge result={overall} size="lg" />
         <div className="flex-1">
-          <div className="text-xs text-zinc-400">Rang global</div>
-          <div className="text-2xl font-black" style={{ color: overall.rank.color }}>
+          <div className="text-xs text-silver">Rang global</div>
+          <div className="font-display text-2xl font-semibold" style={{ color: overall.rank.color }}>
             {overall.rank.name}
           </div>
           <div className="mt-1">
@@ -201,10 +204,10 @@ function RanksTab() {
             const r = byMuscle.get(m)
             return (
               <Card key={m} className="flex items-center gap-2 p-3">
-                {r ? <RankBadge result={r.rank} size="sm" /> : <div className="size-8 rounded-lg border border-dashed border-zinc-700" />}
+                {r ? <RankBadge result={r.rank} size="sm" /> : <div className="size-8 rounded-lg border border-dashed border-line" />}
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{MUSCLE_LABELS[m]}</div>
-                  <div className="text-xs" style={{ color: r?.rank.rank.color ?? '#52525b' }}>
+                  <div className="text-xs" style={{ color: r?.rank.rank.color ?? '#6a6f7b' }}>
                     {r?.rank.rank.name ?? 'Non classé'}
                   </div>
                 </div>
@@ -220,7 +223,7 @@ function RanksTab() {
             <RankBadge result={rank} />
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{ex.name}</div>
-              <div className="text-xs text-zinc-400">
+              <div className="text-xs text-silver">
                 1RM ~{formatNumber(e1rm, 0)} kg · {formatNumber(rank.ratio, 2)}× ton poids
               </div>
               <div className="mt-1.5">
@@ -230,7 +233,7 @@ function RanksTab() {
           </Card>
         ))}
       </div>
-      <p className="mt-4 text-center text-xs text-zinc-400">Rangs basés sur des standards de force indicatifs, ajustés au poids de corps et au sexe.</p>
+      <p className="mt-4 text-center text-xs text-silver">Rangs basés sur des standards de force indicatifs, ajustés au poids de corps et au sexe.</p>
     </>
   )
 }
@@ -299,29 +302,18 @@ function StatsTab() {
       </Card>
 
       <SectionTitle>Séances par semaine</SectionTitle>
-      <Card className="h-44 p-3">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={perWeek} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
-            <XAxis dataKey="label" tick={{ fill: '#a1a1aa', fontSize: 10 }} axisLine={false} tickLine={false} interval={2} />
-            <Tooltip
-              cursor={{ fill: '#27272a' }}
-              contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 12, fontSize: 12 }}
-              formatter={(v) => [`${v} séance(s)`, '']}
-              separator=""
-            />
-            <Bar dataKey="n" radius={[6, 6, 0, 0]} fill="#a3e635" />
-          </BarChart>
-        </ResponsiveContainer>
+      <Card className="p-3">
+        <BarsChart data={perWeek} dataKey="n" labelKey="label" format={(v) => `${v} séance${v > 1 ? 's' : ''}`} />
       </Card>
 
       <SectionTitle>Séries par muscle (30 jours)</SectionTitle>
       <Card className="space-y-2">
-        {muscleSets.length === 0 && <p className="text-sm text-zinc-400">Aucune séance ces 30 derniers jours.</p>}
+        {muscleSets.length === 0 && <p className="text-sm text-silver">Aucune séance ces 30 derniers jours.</p>}
         {muscleSets.map(([m, n]) => (
           <div key={m} className="flex items-center gap-2 text-sm">
-            <span className="w-24 shrink-0 truncate text-zinc-300">{MUSCLE_LABELS[m]}</span>
-            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-zinc-800">
-              <div className="h-full rounded-full bg-gradient-accent" style={{ width: `${(n / maxSets) * 100}%` }} />
+            <span className="w-24 shrink-0 truncate text-ivory-dim">{MUSCLE_LABELS[m]}</span>
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-raised">
+              <div className="h-full rounded-full bg-gold" style={{ width: `${(n / maxSets) * 100}%` }} />
             </div>
             <span className="w-8 text-right font-semibold">{n}</span>
           </div>
@@ -335,7 +327,7 @@ function StatsTab() {
         <Stat label="Moy. protéines" value={nutrition.days ? Math.round(nutrition.protein) : '—'} unit="g" />
       </Card>
       {nutrition.days > 0 && (
-        <p className="mt-2 text-xs text-zinc-400">
+        <p className="mt-2 text-xs text-silver">
           Objectif : {settings.goals.kcal} kcal et {settings.goals.protein} g de protéines par jour.
         </p>
       )}

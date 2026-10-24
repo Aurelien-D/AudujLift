@@ -73,7 +73,7 @@ export default function FoodDetail() {
       actions={
         <>
           <IconButton aria-label="Favori" onClick={() => db.foods.update(food.id, { favorite: !food.favorite })}>
-            <Star size={22} className={food.favorite ? 'fill-amber-400 text-amber-400' : ''} />
+            <Star size={22} className={food.favorite ? 'fill-warn text-warn' : ''} />
           </IconButton>
           <IconButton aria-label="Modifier l'aliment" onClick={() => navigate(`/nutrition/food/${food.id}/edit`)}>
             <Pencil size={20} />
@@ -90,8 +90,8 @@ export default function FoodDetail() {
       <Card>
         <div className="flex items-center gap-4">
           <Ring value={n.kcal} max={g.kcal} size={96} stroke={8}>
-            <span className="text-xl font-black">{Math.round(n.kcal)}</span>
-            <span className="text-[10px] text-zinc-400">kcal</span>
+            <span className="font-display text-xl font-semibold">{Math.round(n.kcal)}</span>
+            <span className="text-[10px] text-silver">kcal</span>
           </Ring>
           <div className="grid flex-1 grid-cols-3 gap-2 text-center">
             {[
@@ -100,9 +100,9 @@ export default function FoodDetail() {
               { label: 'Lipides', v: n.fat, goal: g.fat, color: 'text-fat' },
             ].map((m) => (
               <div key={m.label}>
-                <div className={cn('text-lg font-bold', m.color)}>{formatNumber(m.v)}</div>
-                <div className="text-[11px] text-zinc-400">{m.label}</div>
-                <div className="text-[10px] text-zinc-400">{m.goal ? Math.round((m.v / m.goal) * 100) : 0} % obj.</div>
+                <div className={cn('font-display text-lg font-semibold', m.color)}>{formatNumber(m.v)}</div>
+                <div className="text-[11px] text-silver">{m.label}</div>
+                <div className="text-[10px] text-silver">{m.goal ? Math.round((m.v / m.goal) * 100) : 0} % obj.</div>
               </div>
             ))}
           </div>
@@ -112,11 +112,11 @@ export default function FoodDetail() {
       <Card className="mt-3">
         <div className="flex items-end gap-2">
           <div className="flex-1">
-            <div className="mb-1 text-xs text-zinc-400">Quantité</div>
-            <NumberInput value={qty} onChange={setQty} className="text-xl font-bold" aria-label="Quantité" />
+            <div className="mb-1 text-xs text-silver">Quantité</div>
+            <NumberInput value={qty} onChange={setQty} className="font-display text-xl font-semibold" aria-label="Quantité" />
           </div>
           {food.servingSize ? (
-            <div className="flex rounded-xl bg-zinc-950 p-1">
+            <div className="flex rounded-xl bg-ink p-1">
               {(['unit', 'serving'] as const).map((m) => (
                 <button
                   key={m}
@@ -125,14 +125,14 @@ export default function FoodDetail() {
                     setMode(m)
                     setQty(m === 'serving' ? Math.round(((qty ?? 0) / food.servingSize!) * 10) / 10 || 1 : Math.round((qty ?? 1) * food.servingSize!))
                   }}
-                  className={cn('rounded-lg px-3 py-2 text-sm', mode === m ? 'bg-zinc-700 font-semibold' : 'text-zinc-400')}
+                  className={cn('rounded-lg px-3 py-2 text-sm', mode === m ? 'bg-line font-semibold' : 'text-silver')}
                 >
                   {m === 'unit' ? food.unit : 'portion'}
                 </button>
               ))}
             </div>
           ) : (
-            <span className="pb-3 text-zinc-400">{food.unit}</span>
+            <span className="pb-3 text-silver">{food.unit}</span>
           )}
         </div>
         {mode === 'unit' && (
@@ -144,9 +144,9 @@ export default function FoodDetail() {
             ))}
           </div>
         )}
-        {mode === 'serving' && food.servingLabel && <p className="mt-2 text-xs text-zinc-400">1 portion = {food.servingLabel}</p>}
+        {mode === 'serving' && food.servingLabel && <p className="mt-2 text-xs text-silver">1 portion = {food.servingLabel}</p>}
 
-        <div className="mt-4 mb-1 text-xs text-zinc-400">Repas</div>
+        <div className="mt-4 mb-1 text-xs text-silver">Repas</div>
         <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
           {MEALS.map((m) => (
             <Chip key={m} active={meal === m} onClick={() => setMeal(m)}>
@@ -164,9 +164,9 @@ export default function FoodDetail() {
         )}
       </Card>
 
-      <h2 className="mt-6 mb-2 text-sm font-semibold tracking-wide text-zinc-400 uppercase">Valeurs nutritionnelles</h2>
+      <h2 className="mt-6 mb-2 text-sm font-semibold tracking-wide text-silver uppercase">Valeurs nutritionnelles</h2>
       <Card className="p-0">
-        <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-zinc-800 px-4 py-2 text-xs text-zinc-400">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-raised px-4 py-2 text-xs text-silver">
           <span />
           <span className="text-right">100 {food.unit}</span>
           <span className="w-16 text-right">
@@ -174,9 +174,9 @@ export default function FoodDetail() {
           </span>
         </div>
         {ROWS.filter((r) => food.per100[r.key] != null).map((r) => (
-          <div key={r.key} className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-zinc-800/50 px-4 py-2 text-sm last:border-0">
-            <span className={cn(r.indent ? 'pl-3 text-zinc-400' : 'font-medium')}>{r.label}</span>
-            <span className="text-right text-zinc-400">
+          <div key={r.key} className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-raised/50 px-4 py-2 text-sm last:border-0">
+            <span className={cn(r.indent ? 'pl-3 text-silver' : 'font-medium')}>{r.label}</span>
+            <span className="text-right text-silver">
               {formatNumber(food.per100[r.key]!, r.key === 'kcal' ? 0 : 1)} {r.unit}
             </span>
             <span className="w-16 text-right font-semibold">
@@ -185,7 +185,7 @@ export default function FoodDetail() {
           </div>
         ))}
       </Card>
-      <div className="mt-3 flex items-center justify-between text-xs text-zinc-400">
+      <div className="mt-3 flex items-center justify-between text-xs text-silver">
         <span>{food.source === 'off' ? 'Source : Open Food Facts' : food.source === 'ciqual' ? 'Source : table Ciqual 2025 (ANSES)' : 'Aliment créé par toi'}</span>
         <span className="flex items-center gap-2">
           {food.barcode && <span>EAN {food.barcode}</span>}

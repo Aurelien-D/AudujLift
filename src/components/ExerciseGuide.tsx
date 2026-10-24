@@ -46,23 +46,23 @@ export function ExerciseGuide({ exercise }: { exercise: Exercise }) {
       )}
       {(exercise.category || exercise.level) && (
         <div className="mt-2 flex gap-1.5 text-xs">
-          {exercise.category && <span className="rounded-full bg-zinc-800 px-2.5 py-1 text-zinc-300">{CATEGORY_LABELS[exercise.category]}</span>}
-          {exercise.level && <span className="rounded-full bg-zinc-800 px-2.5 py-1 text-zinc-300">Niveau {LEVEL_LABELS[exercise.level].toLowerCase()}</span>}
+          {exercise.category && <span className="rounded-full bg-raised px-2.5 py-1 text-ivory-dim">{CATEGORY_LABELS[exercise.category]}</span>}
+          {exercise.level && <span className="rounded-full bg-raised px-2.5 py-1 text-ivory-dim">Niveau {LEVEL_LABELS[exercise.level].toLowerCase()}</span>}
         </div>
       )}
       {steps && steps.length > 0 && (
         <>
           <SectionTitle>Comment faire</SectionTitle>
           <Card>
-            <ol className="space-y-2.5 text-sm text-zinc-300">
+            <ol className="space-y-2.5 text-sm text-ivory-dim">
               {steps.map((s, i) => (
                 <li key={i} className="flex gap-3">
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-lime-400/15 text-xs font-bold text-lime-300">{i + 1}</span>
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-gold/15 text-xs font-bold text-gold-pale">{i + 1}</span>
                   <span>{s}</span>
                 </li>
               ))}
             </ol>
-            <p className="mt-3 text-[11px] text-zinc-400">Illustrations et consignes : Free Exercise DB (domaine public).</p>
+            <p className="mt-3 text-[11px] text-silver">Illustrations et consignes : Free Exercise DB (domaine public).</p>
           </Card>
         </>
       )}

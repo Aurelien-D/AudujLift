@@ -1,16 +1,16 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Camera, Loader2, PenLine, ScanBarcode, Search, Star, Zap } from 'lucide-react'
+import { Camera, Loader2, PenLine, ScanBarcode, Search, Star, Trash2, Utensils, Zap } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BarcodeScanner } from '../../components/BarcodeScanner'
-import { Button, Chip, EmptyState, Field, inputClass, NumberInput, Page, SectionTitle, Sheet, Tabs } from '../../components/ui'
+import { Button, Chip, EmptyState, Field, IconButton, inputClass, MacroLine, NumberInput, Page, SectionTitle, Sheet, Tabs } from '../../components/ui'
 import { db } from '../../lib/db'
-import { ensureFood, lookupBarcode } from '../../lib/foods'
-import { kcalFromMacros, MEAL_LABELS, MEALS } from '../../lib/nutrition'
+import { ensureFood, logSavedMeal, lookupBarcode } from '../../lib/foods'
+import { kcalFromMacros, MEAL_LABELS, MEALS, sumNutrients } from '../../lib/nutrition'
 import { searchCiqual } from '../../lib/ciqual'
 import { searchProducts } from '../../lib/off'
 import { searchPopularProducts } from '../../lib/offline-products'
-import type { Food, Meal } from '../../lib/types'
+import type { Food, Meal, SavedMeal } from '../../lib/types'
 import { cn, normalize, toISODate, uid } from '../../lib/utils'
 
 export function defaultMeal(): Meal {
@@ -31,19 +31,19 @@ export function NutriScore({ grade }: { grade?: string }) {
 export function FoodRow({ food, onClick }: { food: Food; onClick: () => void }) {
   const img = food.imageUrl || food.photos?.find(Boolean)
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left active:bg-zinc-800">
-      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-800">
-        {img ? <img src={img} alt="" loading="lazy" className="size-full object-cover" /> : <span className="text-lg">🍴</span>}
+    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left active:bg-raised">
+      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised">
+        {img ? <img src={img} alt="" loading="lazy" className="size-full object-cover" /> : <Utensils size={18} strokeWidth={1.75} className="text-silver" />}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="truncate font-medium">{food.name}</span>
-          {food.favorite && <Star size={12} className="shrink-0 fill-amber-400 text-amber-400" />}
+          {food.favorite && <Star size={12} className="shrink-0 fill-gold text-gold" />}
         </div>
-        <div className="truncate text-xs text-zinc-400">
+        <div className="truncate text-xs text-silver">
           {food.brand ? `${food.brand} · ` : ''}
           {Math.round(food.per100.kcal)} kcal · P {Math.round(food.per100.protein)} · G {Math.round(food.per100.carbs)} · L {Math.round(food.per100.fat)}{' '}
-          <span className="text-zinc-400">/100{food.unit}</span>
+          <span className="text-silver">/100{food.unit}</span>
         </div>
       </div>
       <NutriScore grade={food.nutriscore} />
@@ -51,7 +51,7 @@ export function FoodRow({ food, onClick }: { food: Food; onClick: () => void }) 
   )
 }
 
-type Tab = 'recent' | 'favorites' | 'mine'
+type Tab = 'recent' | 'favorites' | 'meals' | 'mine'
 
 export default function AddFood() {
   const navigate = useNavigate()
@@ -69,6 +69,7 @@ export default function AddFood() {
   const [retry, setRetry] = useState(0)
 
   const foods = useLiveQuery(() => db.foods.toArray(), [])
+  const meals = useLiveQuery(async () => (await db.meals.toArray()).sort((a, b) => (b.lastUsedAt ?? b.createdAt) - (a.lastUsedAt ?? a.createdAt)), [])
   const ctx = `date=${date}&meal=${meal}`
 
   const local = useMemo(() => {
@@ -160,7 +161,7 @@ export default function AddFood() {
         ))}
       </div>
       <div className="relative">
-        <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
+        <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-silver" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -172,28 +173,25 @@ export default function AddFood() {
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <button
-          onClick={() => setScan(true)}
-          className="flex flex-col items-center gap-1.5 rounded-2xl bg-gradient-accent py-3 text-xs font-bold text-zinc-950 active:brightness-90"
-        >
+        <button onClick={() => setScan(true)} className="press flex flex-col items-center gap-1.5 rounded-2xl bg-gold py-3 text-xs font-semibold text-ink active:bg-gold-pale">
           <ScanBarcode size={22} /> Scanner
         </button>
         <button
           onClick={() => navigate(`/nutrition/food/new?${ctx}`)}
-          className="flex flex-col items-center gap-1.5 rounded-2xl border border-zinc-800 bg-zinc-900 py-3 text-xs font-medium text-zinc-200 active:bg-zinc-800"
+          className="press flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-surface py-3 text-xs font-medium text-ivory active:bg-raised"
         >
-          <Camera size={22} className="text-lime-400" /> Créer (photo)
+          <Camera size={22} className="text-gold" /> Créer (photo)
         </button>
         <button
           onClick={() => setQuick(true)}
-          className="flex flex-col items-center gap-1.5 rounded-2xl border border-zinc-800 bg-zinc-900 py-3 text-xs font-medium text-zinc-200 active:bg-zinc-800"
+          className="press flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-surface py-3 text-xs font-medium text-ivory active:bg-raised"
         >
-          <Zap size={22} className="text-lime-400" /> Ajout rapide
+          <Zap size={22} className="text-gold" /> Ajout rapide
         </button>
       </div>
 
       {scanStatus && (
-        <p className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
+        <p className="mt-3 flex items-center gap-2 text-sm text-ivory-dim">
           <Loader2 size={16} className="animate-spin" /> {scanStatus}
         </p>
       )}
@@ -216,12 +214,12 @@ export default function AddFood() {
               ))}
             </>
           )}
-          <SectionTitle action={remote.loading && <Loader2 size={16} className="animate-spin text-zinc-400" />}>Produits de marque</SectionTitle>
+          <SectionTitle action={remote.loading && <Loader2 size={16} className="animate-spin text-silver" />}>Produits de marque</SectionTitle>
           {brands.map((f) => (
             <FoodRow key={f.barcode ?? f.id} food={f} onClick={() => openFood(f)} />
           ))}
           {remote.error && (
-            <div className="mt-2 flex items-center gap-3 rounded-xl bg-zinc-800/60 p-3 text-sm text-zinc-300">
+            <div className="mt-2 flex items-center gap-3 rounded-xl bg-raised/60 p-3 text-sm text-ivory-dim">
               <span className="flex-1">
                 {brands.length ? 'Résultats hors ligne uniquement : ' : ''}
                 {remote.error}.
@@ -232,10 +230,10 @@ export default function AddFood() {
             </div>
           )}
           {!remote.loading && !remote.error && query.trim().length >= 3 && brands.length === 0 && (
-            <p className="text-sm text-zinc-400">Aucun produit de marque trouvé. Essaie un autre mot-clé, scanne le code-barres ou crée l'aliment.</p>
+            <p className="text-sm text-silver">Aucun produit de marque trouvé. Essaie un autre mot-clé, scanne le code-barres ou crée l'aliment.</p>
           )}
-          {remote.loading && brands.length === 0 && <p className="text-sm text-zinc-400">Recherche en cours…</p>}
-          {query.trim().length < 3 && brands.length === 0 && <p className="text-sm text-zinc-400">Tape au moins 3 lettres…</p>}
+          {remote.loading && brands.length === 0 && <p className="text-sm text-silver">Recherche en cours…</p>}
+          {query.trim().length < 3 && brands.length === 0 && <p className="text-sm text-silver">Tape au moins 3 lettres…</p>}
         </>
       ) : (
         <>
@@ -246,32 +244,82 @@ export default function AddFood() {
               tabs={[
                 { value: 'recent', label: 'Récents' },
                 { value: 'favorites', label: 'Favoris' },
+                { value: 'meals', label: 'Repas' },
                 { value: 'mine', label: 'Créés' },
               ]}
             />
           </div>
-          <div className="mt-2">
-            {local.map((f) => (
-              <FoodRow key={f.id} food={f} onClick={() => openFood(f)} />
-            ))}
-            {foods && local.length === 0 && (
-              <div className="mt-3">
-                <EmptyState title={tab === 'recent' ? 'Aucun aliment récent' : tab === 'favorites' ? 'Aucun favori' : 'Aucun aliment créé'}>
-                  {tab === 'recent'
-                    ? 'Scanne un code-barres ou recherche un aliment pour commencer.'
-                    : tab === 'favorites'
-                      ? "Touche l'étoile sur la fiche d'un aliment pour l'ajouter ici."
-                      : 'Crée un aliment à partir de la photo de son emballage.'}
-                </EmptyState>
-              </div>
-            )}
-          </div>
+          {tab === 'meals' ? (
+            <div className="mt-2">
+              {(meals ?? []).map((m) => (
+                <SavedMealRow
+                  key={m.id}
+                  meal={m}
+                  onAdd={async () => {
+                    await logSavedMeal(m, date, meal)
+                    navigate(`/nutrition?date=${date}`)
+                  }}
+                />
+              ))}
+              {meals && meals.length === 0 && (
+                <div className="mt-3">
+                  <EmptyState title="Aucun repas favori">
+                    Dans le journal, touche « ⋯ » sur un repas puis « Enregistrer comme repas favori » pour l'ajouter ici en un geste.
+                  </EmptyState>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-2">
+              {local.map((f) => (
+                <FoodRow key={f.id} food={f} onClick={() => openFood(f)} />
+              ))}
+              {foods && local.length === 0 && (
+                <div className="mt-3">
+                  <EmptyState title={tab === 'recent' ? 'Aucun aliment récent' : tab === 'favorites' ? 'Aucun favori' : 'Aucun aliment créé'}>
+                    {tab === 'recent'
+                      ? 'Scanne un code-barres ou recherche un aliment pour commencer.'
+                      : tab === 'favorites'
+                        ? "Touche l'étoile sur la fiche d'un aliment pour l'ajouter ici."
+                        : 'Crée un aliment à partir de la photo de son emballage.'}
+                  </EmptyState>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
       <BarcodeScanner open={scan} onClose={() => setScan(false)} onDetected={onDetected} />
       {quick && <QuickAdd date={date} meal={meal} onClose={() => setQuick(false)} onDone={() => navigate(`/nutrition?date=${date}`)} />}
     </Page>
+  )
+}
+
+function SavedMealRow({ meal, onAdd }: { meal: SavedMeal; onAdd: () => void }) {
+  const t = sumNutrients(meal.items.map((i) => i.nutrients))
+  return (
+    <div className="flex items-center gap-1 rounded-xl active:bg-raised">
+      <button onClick={onAdd} className="flex min-w-0 flex-1 items-center gap-3 px-2 py-2.5 text-left">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold">
+          <Star size={18} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-medium">{meal.name}</div>
+          <div className="truncate text-xs text-silver">
+            {meal.items.length} aliment{meal.items.length > 1 ? 's' : ''} · {meal.items.map((i) => i.name).join(', ')}
+          </div>
+          <MacroLine {...t} />
+        </div>
+      </button>
+      <IconButton
+        aria-label={`Supprimer ${meal.name}`}
+        className="text-silver"
+        onClick={() => confirm(`Supprimer le repas favori « ${meal.name} » ?`) && void db.meals.delete(meal.id)}
+      >
+        <Trash2 size={16} />
+      </IconButton>
+    </div>
   )
 }
 

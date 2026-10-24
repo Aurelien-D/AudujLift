@@ -127,7 +127,7 @@ export default function RoutineEditor() {
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <h3 className="min-w-0 flex-1 truncate font-semibold text-lime-300">{ex?.name ?? 'Exercice supprimé'}</h3>
+                  <h3 className="min-w-0 flex-1 truncate font-semibold text-gold-pale">{ex?.name ?? 'Exercice supprimé'}</h3>
                   <IconButton aria-label="Options" onClick={() => setMenu(re.uid)}>
                     <MoreVertical size={18} />
                   </IconButton>
@@ -139,17 +139,17 @@ export default function RoutineEditor() {
                   value={re.notes ?? ''}
                   onChange={(e) => updateEx(re.uid, (x) => ({ ...x, notes: e.target.value || undefined }))}
                   placeholder="Note (tempo, réglage…)"
-                  className="mt-2 w-full bg-transparent text-sm text-zinc-400 outline-none placeholder:text-zinc-500"
+                  className="mt-2 w-full bg-transparent text-sm text-silver outline-none placeholder:text-silver-dim"
                 />
               </div>
-              <div className="mt-2 grid grid-cols-[2.5rem_1fr_1fr] gap-2 px-1 text-[11px] font-semibold tracking-wide text-zinc-400 uppercase">
+              <div className="mt-2 grid grid-cols-[2.5rem_1fr_1fr] gap-2 px-1 text-[11px] font-semibold tracking-wide text-silver uppercase">
                 <span className="text-center">Série</span>
                 <span className="text-center">{cols[0].label} (cible)</span>
                 <span className="text-center">{cols[1].label}</span>
               </div>
               {re.sets.map((s, i) => (
                 <div key={i} className="mt-1.5 grid grid-cols-[2.5rem_1fr_1fr] items-center gap-2">
-                  <button onClick={() => setSetMenuTarget({ ex: re.uid, idx: i })} className={cn('h-9 rounded-lg bg-zinc-800 text-sm font-bold', SET_TYPE_LABELS[s.type].color)}>
+                  <button onClick={() => setSetMenuTarget({ ex: re.uid, idx: i })} className={cn('h-9 rounded-lg bg-raised text-sm font-bold', SET_TYPE_LABELS[s.type].color)}>
                     {labels[i]}
                   </button>
                   {cols.map((col) => (

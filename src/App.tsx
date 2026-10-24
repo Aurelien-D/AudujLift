@@ -16,6 +16,8 @@ const Nutrition = lazy(() => import('./pages/nutrition/Nutrition'))
 const RecipeEditor = lazy(() => import('./pages/nutrition/RecipeEditor'))
 const ShoppingList = lazy(() => import('./pages/nutrition/ShoppingList'))
 const PlatePhoto = lazy(() => import('./pages/nutrition/PlatePhoto'))
+const Friends = lazy(() => import('./pages/social/Friends'))
+const ShareImport = lazy(() => import('./pages/social/ShareImport'))
 const Progress = lazy(() => import('./pages/progress/Progress'))
 const WeeklyRecap = lazy(() => import('./pages/progress/WeeklyRecap'))
 const ActiveWorkout = lazy(() => import('./pages/workout/ActiveWorkout'))
@@ -62,6 +64,8 @@ function Shell() {
             <Route path="/nutrition/recipe/:id" element={<RecipeEditor />} />
             <Route path="/nutrition/shopping" element={<ShoppingList />} />
             <Route path="/nutrition/photo" element={<PlatePhoto />} />
+            <Route path="/friends" element={<Friends />} />
+            <Route path="/share" element={<ShareImport />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/recap" element={<WeeklyRecap />} />
             <Route path="/profile" element={<Profile />} />

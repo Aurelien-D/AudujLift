@@ -13,7 +13,7 @@ import { MUSCLE_LABELS } from '../../lib/exercises-data'
 import { useDoneWorkouts, useExerciseMap, useExercises, useLatestBodyweight, useSettings } from '../../lib/hooks'
 import { muscleSets as countMuscleSets } from '../../lib/insights'
 import { sumNutrients } from '../../lib/nutrition'
-import { computeRank, exerciseHistory, personalRecords, RANKS, workoutTotals, type RankResult } from '../../lib/stats'
+import { bodyRegion, computeRank, exerciseHistory, personalRecords, rankFromScore, RANKS, workoutTotals, type RankResult } from '../../lib/stats'
 import type { Exercise, MuscleGroup } from '../../lib/types'
 import { addDays, formatDuration, formatNumber, formatShortDate, fromISODate, startOfWeek, toISODate, uid } from '../../lib/utils'
 
@@ -155,24 +155,27 @@ function RanksTab() {
       if (!ex.standard) continue
       const pr = personalRecords(exerciseHistory(ex, workouts, bw))
       if (!pr.bestE1rm) continue
-      const rank = computeRank(pr.bestE1rm.value, bw, ex.standard, settings.sex)
+      const rank = computeRank(pr.bestE1rm.value, ex.standard, { sex: settings.sex, bodyweight: bw, heightCm: settings.heightCm }, bodyRegion(ex))
       if (rank) out.push({ ex, rank, e1rm: pr.bestE1rm.value })
     }
-    return out.sort((a, b) => RANKS.indexOf(b.rank.rank) - RANKS.indexOf(a.rank.rank) || b.rank.progress - a.rank.progress)
-  }, [exercises, workouts, bw, settings.sex])
+    return out.sort((a, b) => b.rank.score - a.rank.score)
+  }, [exercises, workouts, bw, settings.sex, settings.heightCm])
 
   const byMuscle = useMemo(() => {
     const m = new Map<MuscleGroup, (typeof ranked)[number]>()
     for (const r of ranked) {
       const cur = m.get(r.ex.muscle)
-      const score = (x: (typeof ranked)[number]) => RANKS.indexOf(x.rank.rank) + x.rank.progress
-      if (!cur || score(r) > score(cur)) m.set(r.ex.muscle, r)
+      if (!cur || r.rank.score > cur.rank.score) m.set(r.ex.muscle, r)
     }
     return m
   }, [ranked])
 
   if (!bw)
-    return <EmptyState title="Ajoute ton poids de corps">Les rangs comparent ta force (1RM estimé) à ton poids de corps. Renseigne une pesée dans l'onglet « Corps ».</EmptyState>
+    return (
+      <EmptyState title="Ajoute ton poids de corps">
+        Les rangs comparent ta force (1RM estimé) en tenant compte de ton sexe, de ton poids et de ta taille. Renseigne une pesée dans l'onglet « Corps ».
+      </EmptyState>
+    )
   if (!ranked.length)
     return (
       <EmptyState title="Pas encore de rang">
@@ -180,9 +183,7 @@ function RanksTab() {
       </EmptyState>
     )
 
-  const overallScore = [...byMuscle.values()].reduce((s, r) => s + RANKS.indexOf(r.rank.rank) + r.rank.progress, 0) / byMuscle.size
-  const overallIdx = Math.min(RANKS.length - 1, Math.floor(overallScore))
-  const overall: RankResult = { rank: RANKS[overallIdx], next: RANKS[overallIdx + 1], progress: overallScore - overallIdx, ratio: 0 }
+  const overall: RankResult = rankFromScore([...byMuscle.values()].reduce((s, r) => s + r.rank.score, 0) / byMuscle.size)
 
   return (
     <>
@@ -191,7 +192,7 @@ function RanksTab() {
         <div className="flex-1">
           <div className="text-xs text-silver">Rang global</div>
           <div className="font-display text-2xl font-semibold" style={{ color: overall.rank.color }}>
-            {overall.rank.name}
+            {overall.label}
           </div>
           <div className="mt-1">
             <RankProgress result={overall} />
@@ -211,7 +212,7 @@ function RanksTab() {
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{MUSCLE_LABELS[m]}</div>
                   <div className="text-xs" style={{ color: r?.rank.rank.color ?? '#6a6f7b' }}>
-                    {r?.rank.rank.name ?? 'Non classé'}
+                    {r?.rank.label ?? 'Non classé'}
                   </div>
                 </div>
               </Card>
@@ -236,8 +237,47 @@ function RanksTab() {
           </Card>
         ))}
       </div>
-      <p className="mt-4 text-center text-xs text-silver">Rangs basés sur des standards de force indicatifs, ajustés au poids de corps et au sexe.</p>
+      <RanksExplainer heightKnown={!!settings.heightCm} />
     </>
+  )
+}
+
+/** Échelle des rangs et méthode de calcul, repliée sous la liste. */
+function RanksExplainer({ heightKnown }: { heightKnown: boolean }) {
+  const navigate = useNavigate()
+  return (
+    <details className="mt-5 rounded-2xl border border-line/70 bg-surface p-4 text-sm text-silver">
+      <summary className="cursor-pointer font-medium text-ivory-dim">Comment sont calculés les rangs ?</summary>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {RANKS.map((r) => (
+          <span key={r.key} className="rounded-full border px-2 py-0.5 text-xs" style={{ color: r.color, borderColor: `${r.color}55` }}>
+            {r.name}
+          </span>
+        ))}
+      </div>
+      <p className="mt-3">
+        Du Bronze au Diamant, chaque rang a 4 divisions (IV → I). Maître, Grand Maître et Challenger n'en ont pas : Challenger correspond au niveau des meilleurs athlètes de force.
+      </p>
+      <p className="mt-2">Ton 1RM estimé (meilleure série) est ramené à celui d'un homme de 80 kg et 1,76 m de même niveau, puis comparé au standard de l'exercice :</p>
+      <ul className="mt-1 list-disc space-y-1 pl-5">
+        <li>
+          <span className="text-ivory-dim">Sexe et poids</span> : formule DOTS, utilisée en compétition de force athlétique. Les plus lourds ne sont pas pénalisés comme avec un
+          simple « × ton poids ».
+        </li>
+        <li>
+          <span className="text-ivory-dim">Haut / bas du corps</span> : pour les femmes, l'écart est plus marqué sur le haut du corps ; les standards en tiennent compte.
+        </li>
+        <li>
+          <span className="text-ivory-dim">Taille</span> : à poids égal, une personne plus grande a des leviers plus longs ; correction modérée, au plus ±8 %.
+        </li>
+      </ul>
+      {!heightKnown && (
+        <button onClick={() => navigate('/profile')} className="mt-3 text-gold underline-offset-2 active:underline">
+          Renseigne ta taille dans le profil pour un rang plus juste
+        </button>
+      )}
+      <p className="mt-3 text-xs text-silver-dim">Standards indicatifs : ils servent à se situer et à progresser, pas à se juger.</p>
+    </details>
   )
 }
 

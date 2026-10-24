@@ -146,50 +146,138 @@ export function detectPRs(workout: Workout, previous: Workout[], exercises: Map<
   return hits
 }
 
-// ---------- Rangs (inspirés de Liftoff) ----------
+// ---------- Rangs (Bronze → Challenger) ----------
 
 export interface Rank {
   key: string
   name: string
+  /** Lettres du badge */
+  short: string
   color: string
-  min: number // fraction du standard Platine
+  /** Niveau minimal, en fraction du standard de l'exercice (1 = standard atteint = Émeraude) */
+  min: number
+  /** Divisions IV → I, comme les rangs classés de League of Legends */
+  divisions: boolean
 }
 
 export const RANKS: Rank[] = [
-  { key: 'fer', name: 'Fer', color: '#7D828E', min: 0 },
-  { key: 'bronze', name: 'Bronze', color: '#B07A4F', min: 0.4 },
-  { key: 'argent', name: 'Argent', color: '#C9CDD6', min: 0.6 },
-  { key: 'or', name: 'Or', color: '#D6B56E', min: 0.8 },
-  { key: 'platine', name: 'Platine', color: '#9FC7C2', min: 1.0 },
-  { key: 'diamant', name: 'Diamant', color: '#8FB2E0', min: 1.25 },
-  { key: 'champion', name: 'Champion', color: '#A58AD0', min: 1.5 },
-  { key: 'titan', name: 'Titan', color: '#D9776C', min: 1.75 },
-  { key: 'legende', name: 'Légende', color: '#E8D3A1', min: 2.0 },
+  { key: 'bronze', name: 'Bronze', short: 'B', color: '#B07A4F', min: 0, divisions: true },
+  { key: 'argent', name: 'Argent', short: 'A', color: '#C9CDD6', min: 0.4, divisions: true },
+  { key: 'or', name: 'Or', short: 'O', color: '#D6B56E', min: 0.6, divisions: true },
+  { key: 'platine', name: 'Platine', short: 'P', color: '#6FC2B8', min: 0.8, divisions: true },
+  { key: 'emeraude', name: 'Émeraude', short: 'É', color: '#4FBF7F', min: 1.0, divisions: true },
+  { key: 'diamant', name: 'Diamant', short: 'D', color: '#8FB2E0', min: 1.2, divisions: true },
+  { key: 'maitre', name: 'Maître', short: 'M', color: '#B08AD8', min: 1.45, divisions: false },
+  { key: 'grand-maitre', name: 'Grand Maître', short: 'GM', color: '#E0736A', min: 1.7, divisions: false },
+  { key: 'challenger', name: 'Challenger', short: 'C', color: '#F0D58C', min: 2.0, divisions: false },
 ]
+
+const ROMAN = ['', 'I', 'II', 'III', 'IV']
 
 export interface RankResult {
   rank: Rank
   next?: Rank
-  /** progression 0..1 vers le rang suivant */
+  /** Division 4 (IV) → 1 (I) pour les rangs divisés */
+  division?: number
+  /** « Or II », « Maître »… */
+  label: string
+  /** Palier suivant (« Or I », « Platine IV », « Grand Maître »…) */
+  nextLabel?: string
+  /** Niveau à atteindre pour le palier suivant */
+  nextLevel?: number
+  /** Progression 0..1 vers le rang suivant */
   progress: number
+  /** Progression 0..1 vers le palier suivant (division ou rang) */
+  stepProgress: number
+  /** Index du rang + progression : sert à trier et à faire des moyennes */
+  score: number
+  level: number
   ratio: number
 }
 
-export function computeRank(bestE1rm: number, bodyweight: number, standard: number, sex: Sex): RankResult | undefined {
-  if (!bestE1rm || !bodyweight || !standard) return undefined
-  const std = standard * (sex === 'female' ? 0.62 : 1)
-  const level = bestE1rm / bodyweight / std
+export interface BodyProfile {
+  sex: Sex
+  bodyweight: number
+  heightCm?: number
+}
+
+export type BodyRegion = 'upper' | 'lower'
+
+// Coefficients DOTS (force athlétique, IPF/USAPL) : comparent des athlètes de sexes et de poids différents
+const DOTS: Record<Sex, number[]> = {
+  male: [-0.000001093, 0.0007391293, -0.1918759221, 24.0900756, -307.75076],
+  female: [-0.0000010706, 0.0005158568, -0.1126655495, 13.6175032, -57.96288],
+}
+function dotsDenominator(sex: Sex, bodyweight: number) {
+  const x = Math.min(sex === 'female' ? 150 : 210, Math.max(40, bodyweight))
+  const [a, b, c, d, e] = DOTS[sex]
+  return a * x ** 4 + b * x ** 3 + c * x ** 2 + d * x + e
+}
+
+/** Référence des standards : homme de 80 kg et 1,76 m. */
+const REF_BODYWEIGHT = 80
+const REF_HEIGHT: Record<Sex, number> = { male: 176, female: 163 }
+/** DOTS est calibré sur des totaux (squat + développé couché + soulevé de terre) ; l'écart femmes/hommes est plus
+ *  marqué sur le haut du corps (développé couché ≈ 60–65 % à poids égal, contre ≈ 75 % pour les jambes). */
+const FEMALE_UPPER = 0.85
+const LOWER_BODY = new Set<string>(['quadriceps', 'ischios', 'fessiers', 'mollets', 'adducteurs', 'lombaires'])
+
+/** Haut ou bas du corps : le soulevé de terre (dos + ischios/fessiers) compte comme bas du corps. */
+export function bodyRegion(ex: Pick<Exercise, 'muscle' | 'secondary'>): BodyRegion {
+  return LOWER_BODY.has(ex.muscle) || ex.secondary.some((m) => m === 'quadriceps' || m === 'ischios' || m === 'fessiers') ? 'lower' : 'upper'
+}
+
+/** Multiplicateur qui ramène un 1RM à celui, de même niveau, d'un homme de 80 kg et 1,76 m.
+ *  - sexe et poids : formule DOTS (non linéaire : les lourds ne sont pas pénalisés comme avec un simple ratio) ;
+ *  - taille : à poids égal, une personne plus grande a moins de section musculaire par centimètre et des leviers
+ *    plus longs ; correction modérée (racine carrée), plafonnée à ±8 %. */
+export function strengthFactor(body: BodyProfile, region: BodyRegion = 'upper'): number {
+  const dots = dotsDenominator('male', REF_BODYWEIGHT) / dotsDenominator(body.sex, body.bodyweight)
+  const female = body.sex === 'female' && region === 'upper' ? 1 / FEMALE_UPPER : 1
+  const height = body.heightCm && body.heightCm > 100 ? Math.min(1.08, Math.max(0.92, Math.sqrt(body.heightCm / REF_HEIGHT[body.sex]))) : 1
+  return dots * female * height
+}
+
+/** Rang correspondant à un niveau (fraction du standard). */
+export function rankFromLevel(level: number, ratio = 0): RankResult {
   let idx = 0
   for (let i = 0; i < RANKS.length; i++) if (level >= RANKS[i].min) idx = i
   const rank = RANKS[idx]
   const next = RANKS[idx + 1]
-  const progress = next ? (level - rank.min) / (next.min - rank.min) : 1
-  return { rank, next, progress: Math.max(0, Math.min(1, progress)), ratio: bestE1rm / bodyweight }
+  const progress = next ? Math.max(0, Math.min(1, (level - rank.min) / (next.min - rank.min))) : 1
+  const base = { rank, next, progress, score: idx + (next ? progress : 0), level, ratio }
+  const firstLabel = (r: Rank) => (r.divisions ? `${r.name} IV` : r.name)
+  if (!next) return { ...base, label: rank.name, stepProgress: 1 }
+  if (!rank.divisions) return { ...base, label: rank.name, nextLabel: firstLabel(next), nextLevel: next.min, stepProgress: progress }
+  const step = Math.min(3, Math.floor(progress * 4 + 1e-9)) // 1e-9 : arrondis flottants pile sur un palier
+  const division = 4 - step
+  const span = next.min - rank.min
+  return {
+    ...base,
+    division,
+    label: `${rank.name} ${ROMAN[division]}`,
+    nextLabel: division > 1 ? `${rank.name} ${ROMAN[division - 1]}` : firstLabel(next),
+    nextLevel: rank.min + (span * (step + 1)) / 4,
+    stepProgress: Math.max(0, Math.min(1, progress * 4 - step)),
+  }
 }
 
-/** Poids (kg) nécessaire en e1RM pour atteindre un rang donné. */
-export function e1rmForRank(rank: Rank, bodyweight: number, standard: number, sex: Sex) {
-  return rank.min * standard * (sex === 'female' ? 0.62 : 1) * bodyweight
+/** Rang moyen à partir d'un score (index du rang + progression), pour le rang global. */
+export function rankFromScore(score: number): RankResult {
+  const idx = Math.max(0, Math.min(RANKS.length - 1, Math.floor(score)))
+  const next = RANKS[idx + 1]
+  return rankFromLevel(next ? RANKS[idx].min + (score - idx) * (next.min - RANKS[idx].min) : RANKS[idx].min)
+}
+
+export function computeRank(bestE1rm: number, standard: number, body: BodyProfile, region: BodyRegion = 'upper'): RankResult | undefined {
+  if (!bestE1rm || !body.bodyweight || !standard) return undefined
+  const level = (bestE1rm * strengthFactor(body, region)) / (REF_BODYWEIGHT * standard)
+  return rankFromLevel(level, bestE1rm / body.bodyweight)
+}
+
+/** 1RM estimé (kg) nécessaire pour atteindre un niveau donné. */
+export function e1rmForLevel(level: number, standard: number, body: BodyProfile, region: BodyRegion = 'upper') {
+  return (level * REF_BODYWEIGHT * standard) / strengthFactor(body, region)
 }
 
 // ---------- Régularité ----------

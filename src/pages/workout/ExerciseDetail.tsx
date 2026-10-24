@@ -3,6 +3,7 @@ import { Pencil, Trash2, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TrendChart } from '../../components/charts'
+import { ExerciseGuide } from '../../components/ExerciseGuide'
 import { ExerciseForm } from '../../components/ExercisePicker'
 import { RankBadge, RankProgress } from '../../components/RankBadge'
 import { Button, Card, EmptyState, IconButton, Page, SectionTitle, Stat, Tabs } from '../../components/ui'
@@ -74,6 +75,7 @@ export default function ExerciseDetail() {
         <span className="rounded-full bg-zinc-800 px-2.5 py-1 text-zinc-400">{KIND_LABELS[exercise.kind]}</span>
       </div>
       {exercise.notes && <p className="mt-3 text-sm text-amber-200/80">{exercise.notes}</p>}
+      <ExerciseGuide exercise={exercise} />
 
       {strength && exercise.standard && (
         <Card className="mt-4">

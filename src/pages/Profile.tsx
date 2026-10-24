@@ -232,7 +232,11 @@ export default function Profile() {
             <a href="https://ciqual.anses.fr" target="_blank" rel="noreferrer" className="text-lime-400 underline">
               table Ciqual 2025
             </a>{' '}
-            de l'ANSES (licence CC-BY 4.0).
+            de l'ANSES (licence CC-BY 4.0). Exercices, photos et consignes :{' '}
+            <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noreferrer" className="text-lime-400 underline">
+              Free Exercise DB
+            </a>{' '}
+            (domaine public).
           </span>
         </p>
       </Card>

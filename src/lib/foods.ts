@@ -1,6 +1,7 @@
 import { db } from './db'
 import { scaleNutrients } from './nutrition'
 import { fetchProductByBarcode } from './off'
+import { findPopularByBarcode } from './offline-products'
 import type { Food, FoodEntry, Meal } from './types'
 import { uid } from './utils'
 
@@ -19,10 +20,12 @@ export async function ensureFood(food: Food): Promise<Food> {
 
 export type BarcodeLookup = { status: 'found'; food: Food } | { status: 'not_found' } | { status: 'error'; message: string }
 
-/** Cherche d'abord dans les aliments locaux, puis dans Open Food Facts. */
+/** Cherche d'abord dans les aliments locaux, puis parmi les produits populaires embarqués, puis dans Open Food Facts. */
 export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
   const local = await db.foods.where('barcode').equals(barcode).first()
   if (local) return { status: 'found', food: local }
+  const popular = await findPopularByBarcode(barcode)
+  if (popular) return { status: 'found', food: await ensureFood(popular) }
   try {
     const food = await fetchProductByBarcode(barcode)
     if (!food) return { status: 'not_found' }

@@ -6,7 +6,7 @@ Application web (PWA installable sur téléphone) de suivi **musculation** et **
 
 ### Musculation
 - **Routines** personnalisées (dossiers, séries cibles, temps de repos, notes, supersets) + **programmes prêts à l'emploi** : Push/Pull/Legs, Haut/Bas, Full Body.
-- **Bibliothèque de ~115 exercices en français** (muscle principal/secondaires, équipement) + création d'exercices perso. Types de mesure : poids × reps, poids du corps (+ lest), durée, cardio (distance + durée).
+- **Bibliothèque de 884 exercices en français** avec **photos et consignes d'exécution** (Free Exercise DB, domaine public) : musculation, powerlifting, haltérophilie, pliométrie, cardio, étirements ; filtres par muscle et par matériel ; création d'exercices perso. Types de mesure : poids × reps, poids du corps (+ lest), durée, cardio (distance + durée).
 - **Séance en direct** : chrono, colonne « Précédent » (valeurs de la dernière séance, un tap pour les reprendre), types de séries (échauffement, normale, dégressive, échec), validation d'une série → **minuteur de repos** automatique (±15 s, vibration, son, notification), supersets, remplacement/réorganisation d'exercices, **calculateur de disques**. La séance est sauvegardée en continu (rien n'est perdu si l'appli est fermée).
 - **Fin de séance** : récap (durée, volume, séries), **records personnels battus** 🏆, mise à jour de la routine en un tap.
 - **Historique** avec calendrier mensuel, modification des séances passées.
@@ -17,7 +17,7 @@ Application web (PWA installable sur téléphone) de suivi **musculation** et **
 ### Nutrition
 - Journal par repas (petit-déj, déjeuner, collations, dîner), anneau des calories restantes et barres de macros.
 - **Scan de code-barres** avec la caméra (API native sur Android/Chrome, ZXing sur iPhone) relié à **[Open Food Facts](https://fr.openfoodfacts.org)**, la base alimentaire libre et collaborative (excellente couverture en France), + saisie manuelle du code.
-- **Recherche** : ~3 400 **aliments génériques de la table Ciqual 2025 (ANSES)** embarqués dans l'appli (instantané, hors connexion) + produits de marque d'Open Food Facts (avec nouvelles tentatives quand leur serveur est surchargé).
+- **Recherche** : ~3 400 **aliments génériques de la table Ciqual 2025 (ANSES)** et les **15 000 produits de marque les plus scannés en France** (Open Food Facts) embarqués dans l'appli — recherche et scan instantanés, même hors connexion — complétés en ligne par toute la base Open Food Facts (plus de 3 millions de produits).
 - **Création d'aliment avec photos** du paquet et de l'étiquette, et **lecture automatique du tableau nutritionnel (OCR)** qui pré-remplit kcal, protéines, glucides, sucres, lipides, AGS, fibres et sel — avec contrôle de cohérence.
 - Portions, favoris, récents, **ajout rapide** (kcal/macros), copie du repas de la veille, suivi de **l'hydratation**, Nutri-Score.
 - **Calcul des besoins** (Mifflin-St Jeor × activité, objectif sèche/maintien/masse) et proposition de macros.
@@ -41,7 +41,7 @@ npm run build    # build de production (dist/)
 npm run format   # Prettier
 ```
 
-Données Ciqual régénérables avec `scripts/ciqual2json.py` à partir des fichiers XML publiés par l'ANSES sur Zenodo.
+Données embarquées et licences : voir `src/data/README.md`.
 
 Stack : React 19 + TypeScript, Vite, Tailwind CSS 4, Dexie (IndexedDB), Recharts, ZXing, Tesseract.js, vite-plugin-pwa.
 

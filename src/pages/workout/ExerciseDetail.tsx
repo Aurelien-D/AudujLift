@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Pencil, Trash2, Trophy } from 'lucide-react'
+import { Copy, Pencil, Trash2, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TrendChart } from '../../components/charts'
@@ -26,6 +26,7 @@ export default function ExerciseDetail() {
   const bw = useLatestBodyweight()
   const [metric, setMetric] = useState<Metric>('e1rm')
   const [editing, setEditing] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
 
   const history = useMemo(() => (exercise && workouts ? exerciseHistory(exercise, workouts, bw) : []), [exercise, workouts, bw])
   const pr = useMemo(() => personalRecords(history), [history])
@@ -74,6 +75,7 @@ export default function ExerciseDetail() {
         ))}
         <span className="rounded-full bg-raised px-2.5 py-1 text-silver">{KIND_LABELS[exercise.kind]}</span>
       </div>
+      {exercise.custom && <p className="mt-2 text-xs text-silver">Exercice personnel{exercise.guideId ? ' · consignes reprises de l’exercice d’origine' : ''}</p>}
       {exercise.notes && <p className="mt-3 text-sm text-gold-pale/80">{exercise.notes}</p>}
       <ExerciseGuide exercise={exercise} />
 
@@ -193,12 +195,26 @@ export default function ExerciseDetail() {
         </>
       )}
 
+      <Button variant="secondary" className="mt-6 w-full" onClick={() => setDuplicating(true)}>
+        <Copy size={18} /> Créer une variante (ma version de cet exercice)
+      </Button>
       {exercise.custom && (
-        <Button variant="danger" className="mt-6 w-full" onClick={remove}>
+        <Button variant="danger" className="mt-2 w-full" onClick={remove}>
           <Trash2 size={18} /> Supprimer l'exercice
         </Button>
       )}
       {editing && <ExerciseForm open exercise={exercise} onClose={() => setEditing(false)} onSaved={() => setEditing(false)} />}
+      {duplicating && (
+        <ExerciseForm
+          open
+          duplicateOf={exercise}
+          onClose={() => setDuplicating(false)}
+          onSaved={(e) => {
+            setDuplicating(false)
+            navigate(`/exercises/${e.id}`, { replace: true })
+          }}
+        />
+      )}
     </Page>
   )
 }

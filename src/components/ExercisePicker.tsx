@@ -1,11 +1,12 @@
-import { Check, Plus, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Camera, Check, Plus, Search, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { EQUIPMENT_LABELS, exerciseImages, KIND_LABELS, MUSCLE_LABELS } from '../lib/exercises-data'
 import { useExercises } from '../lib/hooks'
 import type { Equipment, Exercise, ExerciseKind, MuscleGroup } from '../lib/types'
 import { filterExercises } from '../lib/exercise-search'
-import { cn, uid } from '../lib/utils'
+import { compressImage } from '../lib/image'
+import { cn, normalize, uid } from '../lib/utils'
 import { Button, Chip, Field, inputClass, Select, Sheet } from './ui'
 
 /** Nombre d'exercices affichés par page (la liste complète en compte ~900) */
@@ -173,52 +174,114 @@ export function ExerciseForm({
   onSaved,
   initialName = '',
   exercise,
+  duplicateOf,
 }: {
   open: boolean
   onClose: () => void
   onSaved?: (e: Exercise) => void
   initialName?: string
+  /** Exercice à modifier */
   exercise?: Exercise
+  /** Exercice servant de modèle pour une variante personnelle */
+  duplicateOf?: Exercise
 }) {
-  const [name, setName] = useState(exercise?.name ?? initialName)
-  const [muscle, setMuscle] = useState<MuscleGroup>(exercise?.muscle ?? 'pectoraux')
-  const [equipment, setEquipment] = useState<Equipment>(exercise?.equipment ?? 'halteres')
-  const [kind, setKind] = useState<ExerciseKind>(exercise?.kind ?? 'weight_reps')
-  const [notes, setNotes] = useState(exercise?.notes ?? '')
+  const base = exercise ?? duplicateOf
+  const all = useExercises()
+  const [name, setName] = useState(exercise?.name ?? (duplicateOf ? `${duplicateOf.name} (variante)` : initialName))
+  const [muscle, setMuscle] = useState<MuscleGroup>(base?.muscle ?? 'pectoraux')
+  const [secondary, setSecondary] = useState<MuscleGroup[]>(base?.secondary ?? [])
+  const [equipment, setEquipment] = useState<Equipment>(base?.equipment ?? 'halteres')
+  const [kind, setKind] = useState<ExerciseKind>(base?.kind ?? 'weight_reps')
+  const [notes, setNotes] = useState(base?.notes ?? '')
+  const [photo, setPhoto] = useState<string | undefined>(base?.photo)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const trimmed = name.trim()
+  const twin = trimmed && (all ?? []).find((e) => e.id !== exercise?.id && normalize(e.name) === normalize(trimmed))
+
+  const toggleSecondary = (m: MuscleGroup) => setSecondary((s) => (s.includes(m) ? s.filter((x) => x !== m) : [...s, m]))
 
   const save = async () => {
     const e: Exercise = {
       ...(exercise ?? { secondary: [], custom: true }),
+      ...(duplicateOf ? { ref: duplicateOf.ref, guideId: duplicateOf.guideId ?? duplicateOf.id, standard: duplicateOf.standard, category: duplicateOf.category } : {}),
       id: exercise?.id ?? `custom-${uid()}`,
-      name: name.trim(),
+      name: trimmed,
       muscle,
+      secondary: secondary.filter((m) => m !== muscle),
       equipment,
       kind,
       notes: notes.trim() || undefined,
+      photo,
     }
     await db.exercises.put(e)
     onSaved?.(e)
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={exercise ? "Modifier l'exercice" : 'Nouvel exercice'}>
+    <Sheet open={open} onClose={onClose} title={exercise ? "Modifier l'exercice" : duplicateOf ? 'Nouvelle variante' : 'Nouvel exercice'}>
       <div className="space-y-3">
         <Field label="Nom">
-          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="Ex. Développé couché prise large" />
+          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="Ex. Presse à cuisses 45° (salle)" />
         </Field>
+        {twin && <p className="-mt-1 text-xs text-warn">Un exercice porte déjà ce nom : « {twin.name} ».</p>}
         <Field label="Muscle principal">
           <Select value={muscle} onChange={setMuscle} options={Object.entries(MUSCLE_LABELS).map(([value, label]) => ({ value: value as MuscleGroup, label }))} />
         </Field>
-        <Field label="Équipement">
-          <Select value={equipment} onChange={setEquipment} options={Object.entries(EQUIPMENT_LABELS).map(([value, label]) => ({ value: value as Equipment, label }))} />
-        </Field>
-        <Field label="Type de mesure">
-          <Select value={kind} onChange={setKind} options={Object.entries(KIND_LABELS).map(([value, label]) => ({ value: value as ExerciseKind, label }))} />
-        </Field>
+        <div>
+          <div className="mb-1.5 text-xs font-medium text-silver">Muscles secondaires (comptés pour moitié dans la carte des muscles)</div>
+          <div className="flex flex-wrap gap-1.5">
+            {(Object.keys(MUSCLE_LABELS) as MuscleGroup[])
+              .filter((m) => m !== muscle && m !== 'cardio' && m !== 'corps-entier')
+              .map((m) => (
+                <Chip key={m} active={secondary.includes(m)} onClick={() => toggleSecondary(m)}>
+                  {MUSCLE_LABELS[m]}
+                </Chip>
+              ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Équipement">
+            <Select value={equipment} onChange={setEquipment} options={Object.entries(EQUIPMENT_LABELS).map(([value, label]) => ({ value: value as Equipment, label }))} />
+          </Field>
+          <Field label="Mesure">
+            <Select value={kind} onChange={setKind} options={Object.entries(KIND_LABELS).map(([value, label]) => ({ value: value as ExerciseKind, label }))} />
+          </Field>
+        </div>
+        <div>
+          <div className="mb-1.5 text-xs font-medium text-silver">Photo (machine, réglages, position…)</div>
+          {photo ? (
+            <div className="relative overflow-hidden rounded-xl border border-line">
+              <img src={photo} alt="Photo de l'exercice" className="max-h-48 w-full object-cover" />
+              <button aria-label="Retirer la photo" onClick={() => setPhoto(undefined)} className="press absolute top-2 right-2 rounded-full bg-ink/80 p-1.5 text-ivory">
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="press flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gold/40 py-4 text-sm text-gold active:bg-gold/10"
+            >
+              <Camera size={18} /> Prendre la machine en photo
+            </button>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={async (e) => {
+              const f = e.target.files?.[0]
+              e.target.value = ''
+              if (f) setPhoto(await compressImage(f, 900, 0.78))
+            }}
+          />
+        </div>
         <Field label="Notes (réglages machine, consignes…)">
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputClass} />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputClass} placeholder="Ex. siège cran 4, dossier incliné à 30°" />
         </Field>
-        <Button variant="primary" size="lg" className="w-full" disabled={!name.trim()} onClick={save}>
+        <Button variant="primary" size="lg" className="w-full" disabled={!trimmed} onClick={save}>
           Enregistrer
         </Button>
       </div>

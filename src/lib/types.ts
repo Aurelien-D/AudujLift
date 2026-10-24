@@ -43,6 +43,10 @@ export interface Exercise {
   level?: 'debutant' | 'intermediaire' | 'expert'
   /** Identifiant dans Free Exercise DB (photos et consignes) */
   ref?: string
+  /** Photo prise par l'utilisateur (data URL JPEG), prioritaire sur les photos de la bibliothèque */
+  photo?: string
+  /** Exercice dont on reprend les consignes (variante créée à partir d'un exercice de la bibliothèque) */
+  guideId?: string
 }
 
 export type SetType = 'warmup' | 'normal' | 'drop' | 'failure'

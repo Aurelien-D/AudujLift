@@ -49,7 +49,8 @@ export const LEVEL_LABELS = { debutant: 'Débutant', intermediaire: 'Intermédia
 
 /** Photos (position de départ / d'arrivée) de Free Exercise DB, domaine public */
 export const EXERCISE_IMAGE_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises'
-export const exerciseImages = (e: Pick<Exercise, 'ref'>) => (e.ref ? [`${EXERCISE_IMAGE_BASE}/${e.ref}/0.jpg`, `${EXERCISE_IMAGE_BASE}/${e.ref}/1.jpg`] : [])
+export const exerciseImages = (e: Pick<Exercise, 'ref' | 'photo'>) =>
+  e.photo ? [e.photo] : e.ref ? [`${EXERCISE_IMAGE_BASE}/${e.ref}/0.jpg`, `${EXERCISE_IMAGE_BASE}/${e.ref}/1.jpg`] : []
 
 /** Bibliothèque complète (~770 exercices) : [id, nom, muscle, secondaires, équipement, mesure, catégorie, niveau] */
 export type LibraryRow = [string, string, MuscleGroup, MuscleGroup[], Equipment, ExerciseKind, ExerciseCategory, Exercise['level']]

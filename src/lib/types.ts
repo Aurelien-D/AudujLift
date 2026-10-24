@@ -82,6 +82,20 @@ export interface Routine {
   createdAt: number
   updatedAt: number
   lastUsedAt?: number
+  /** Ami qui a partagé cette routine */
+  sharedBy?: string
+}
+
+/** Ami (personne avec qui on échange des routines par lien) */
+export interface Friend {
+  id: string
+  name: string
+  /** Routines reçues de cet ami */
+  received: number
+  /** Routines envoyées à cet ami (estimation : chaque partage nommé) */
+  sent: number
+  lastAt: number
+  createdAt: number
 }
 
 export interface WorkoutExercise {

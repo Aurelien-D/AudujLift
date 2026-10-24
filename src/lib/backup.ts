@@ -1,6 +1,6 @@
 import { db } from './db'
 
-const TABLES = ['exercises', 'routines', 'workouts', 'foods', 'entries', 'days', 'bodyweights', 'settings', 'meals', 'measurements', 'photos', 'shopping'] as const
+const TABLES = ['exercises', 'routines', 'workouts', 'foods', 'entries', 'days', 'bodyweights', 'settings', 'meals', 'measurements', 'photos', 'shopping', 'friends'] as const
 
 export async function exportBackup(): Promise<Blob> {
   const data: Record<string, unknown[]> = {}

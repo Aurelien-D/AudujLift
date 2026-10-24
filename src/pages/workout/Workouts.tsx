@@ -1,7 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BookOpen, Copy, Dumbbell, History as HistoryIcon, LayoutTemplate, MoreVertical, Pencil, Play, Plus, Trash2 } from 'lucide-react'
+import { BookOpen, Copy, Dumbbell, History as HistoryIcon, LayoutTemplate, MoreVertical, Pencil, Play, Plus, Share2, Trash2, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ShareRoutineSheet } from '../../components/ShareRoutine'
 import { ActionList, Button, Card, EmptyState, IconButton, Page, SectionTitle, Sheet } from '../../components/ui'
 import { db } from '../../lib/db'
 import { useActiveWorkout, useExerciseMap } from '../../lib/hooks'
@@ -27,6 +28,7 @@ export default function Workouts() {
   const active = useActiveWorkout()
   const start = useStartWorkout()
   const [menu, setMenu] = useState<Routine | null>(null)
+  const [sharing, setSharing] = useState<Routine | null>(null)
 
   const duplicate = async (r: Routine) => {
     const now = Date.now()
@@ -56,6 +58,9 @@ export default function Workouts() {
           <IconButton aria-label="Exercices" onClick={() => navigate('/exercises')}>
             <BookOpen size={22} />
           </IconButton>
+          <IconButton aria-label="Amis" onClick={() => navigate('/friends')}>
+            <Users size={22} />
+          </IconButton>
         </>
       }
     >
@@ -69,11 +74,12 @@ export default function Workouts() {
         </Button>
       )}
 
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-4 gap-2">
         {[
           { label: 'Nouvelle routine', icon: Plus, to: '/workouts/routine/new' },
           { label: 'Programmes', icon: LayoutTemplate, to: '/workouts/programs' },
           { label: 'Exercices', icon: Dumbbell, to: '/exercises' },
+          { label: 'Amis', icon: Users, to: '/friends' },
         ].map(({ label, icon: Icon, to }) => (
           <button
             key={to}
@@ -112,7 +118,10 @@ export default function Workouts() {
               <Card key={r.id}>
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1" onClick={() => navigate(`/workouts/routine/${r.id}`)}>
-                    <h3 className="truncate text-base font-semibold">{r.name}</h3>
+                    <h3 className="truncate text-base font-semibold">
+                      {r.name}
+                      {r.sharedBy && <span className="ml-2 rounded-full border border-gold/40 px-2 py-0.5 align-middle text-[11px] font-normal text-gold">de {r.sharedBy}</span>}
+                    </h3>
                     <p className="mt-0.5 line-clamp-2 text-sm text-silver">{r.exercises.map((e) => exMap.get(e.exerciseId)?.name ?? '?').join(', ') || 'Aucun exercice'}</p>
                     <p className="mt-1 text-xs text-silver">
                       {r.exercises.length} exercices · {r.exercises.reduce((n, e) => n + e.sets.length, 0)} séries · ~{estimateDurationMin(r.exercises)} min
@@ -137,12 +146,14 @@ export default function Workouts() {
           <ActionList
             items={[
               { icon: <Pencil size={20} />, label: 'Modifier', onClick: () => navigate(`/workouts/routine/${menu.id}`) },
+              { icon: <Share2 size={20} />, label: 'Partager avec un ami', onClick: () => (setSharing(menu), setMenu(null)) },
               { icon: <Copy size={20} />, label: 'Dupliquer', onClick: () => duplicate(menu) },
               { icon: <Trash2 size={20} />, label: 'Supprimer', onClick: () => remove(menu), danger: true },
             ]}
           />
         )}
       </Sheet>
+      {sharing && <ShareRoutineSheet routine={sharing} onClose={() => setSharing(null)} />}
     </Page>
   )
 }

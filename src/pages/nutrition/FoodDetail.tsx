@@ -186,7 +186,7 @@ export default function FoodDetail() {
         ))}
       </Card>
       <div className="mt-3 flex items-center justify-between text-xs text-zinc-500">
-        <span>{food.source === 'off' ? 'Source : Open Food Facts' : 'Aliment créé par toi'}</span>
+        <span>{food.source === 'off' ? 'Source : Open Food Facts' : food.source === 'ciqual' ? 'Source : table Ciqual 2025 (ANSES)' : 'Aliment créé par toi'}</span>
         <span className="flex items-center gap-2">
           {food.barcode && <span>EAN {food.barcode}</span>}
           <NutriScore grade={food.nutriscore} />

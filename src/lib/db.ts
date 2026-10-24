@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { DEFAULT_EXERCISES } from './exercises-data'
+import { activeProfileId, dbNameFor } from './profiles'
 import type { BodyWeight, DayLog, Exercise, Food, FoodEntry, Routine, Settings, Workout } from './types'
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -32,8 +33,8 @@ export class AudujLiftDB extends Dexie {
   bodyweights!: EntityTable<BodyWeight, 'id'>
   settings!: EntityTable<SettingsRow, 'key'>
 
-  constructor() {
-    super('audujlift')
+  constructor(name: string) {
+    super(name)
     this.version(1).stores({
       exercises: 'id, name, muscle, equipment, custom',
       routines: 'id, name, folder, updatedAt, lastUsedAt',
@@ -50,7 +51,8 @@ export class AudujLiftDB extends Dexie {
   }
 }
 
-export const db = new AudujLiftDB()
+/** Base du profil actif */
+export const db = new AudujLiftDB(dbNameFor(activeProfileId()))
 
 /** Ajoute les exercices par défaut manquants (nouvelles versions de la bibliothèque). */
 export async function syncDefaultExercises() {

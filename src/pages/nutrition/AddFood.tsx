@@ -7,6 +7,7 @@ import { Button, Chip, EmptyState, Field, inputClass, NumberInput, Page, Section
 import { db } from '../../lib/db'
 import { ensureFood, lookupBarcode } from '../../lib/foods'
 import { kcalFromMacros, MEAL_LABELS, MEALS } from '../../lib/nutrition'
+import { searchCiqual } from '../../lib/ciqual'
 import { searchProducts } from '../../lib/off'
 import type { Food, Meal } from '../../lib/types'
 import { cn, normalize, toISODate, uid } from '../../lib/utils'
@@ -62,6 +63,8 @@ export default function AddFood() {
   const [quick, setQuick] = useState(false)
   const [remote, setRemote] = useState<{ loading: boolean; error?: string; results: Food[] }>({ loading: false, results: [] })
   const [scanStatus, setScanStatus] = useState<string | null>(null)
+  const [generic, setGeneric] = useState<Food[]>([])
+  const [retry, setRetry] = useState(0)
 
   const foods = useLiveQuery(() => db.foods.toArray(), [])
   const ctx = `date=${date}&meal=${meal}`
@@ -79,7 +82,23 @@ export default function AddFood() {
     return list.filter((f) => f.source === 'custom').sort((a, b) => a.name.localeCompare(b.name))
   }, [foods, query, tab])
 
-  // Recherche Open Food Facts (avec temporisation pendant la frappe)
+  const genericShown = generic.filter((g) => !local.some((l) => l.id === g.id)).slice(0, 8)
+
+  // Aliments génériques Ciqual : recherche locale, instantanée et hors connexion
+  useEffect(() => {
+    let cancelled = false
+    const q = query.trim()
+    if (q.length < 2) {
+      setGeneric([])
+      return
+    }
+    searchCiqual(q).then((r) => !cancelled && setGeneric(r))
+    return () => {
+      cancelled = true
+    }
+  }, [query])
+
+  // Produits de marque Open Food Facts (avec temporisation pendant la frappe)
   useEffect(() => {
     const q = query.trim()
     if (q.length < 3) return setRemote({ loading: false, results: [] })
@@ -94,7 +113,7 @@ export default function AddFood() {
       clearTimeout(t)
       ctrl.abort()
     }
-  }, [query])
+  }, [query, retry])
 
   const openFood = async (food: Food) => {
     const saved = await ensureFood(food)
@@ -174,11 +193,27 @@ export default function AddFood() {
               ))}
             </>
           )}
-          <SectionTitle action={remote.loading && <Loader2 size={16} className="animate-spin text-zinc-500" />}>Open Food Facts</SectionTitle>
-          {remote.error && <p className="text-sm text-rose-400">{remote.error}. Réessaie dans un instant.</p>}
-          {!remote.loading && !remote.error && query.trim().length >= 3 && remote.results.length === 0 && (
-            <p className="text-sm text-zinc-500">Aucun résultat. Essaie un autre mot-clé ou crée l'aliment.</p>
+          {genericShown.length > 0 && (
+            <>
+              <SectionTitle>Aliments génériques · Ciqual</SectionTitle>
+              {genericShown.map((f) => (
+                <FoodRow key={f.id} food={f} onClick={() => openFood(f)} />
+              ))}
+            </>
           )}
+          <SectionTitle action={remote.loading && <Loader2 size={16} className="animate-spin text-zinc-500" />}>Produits de marque · Open Food Facts</SectionTitle>
+          {remote.error && (
+            <div className="flex items-center gap-3 rounded-xl bg-rose-500/10 p-3 text-sm text-rose-300">
+              <span className="flex-1">{remote.error}. Le scan de code-barres reste disponible.</span>
+              <Button size="sm" variant="secondary" onClick={() => setRetry((n) => n + 1)}>
+                Réessayer
+              </Button>
+            </div>
+          )}
+          {!remote.loading && !remote.error && query.trim().length >= 3 && remote.results.length === 0 && (
+            <p className="text-sm text-zinc-500">Aucun produit de marque trouvé. Essaie un autre mot-clé, scanne le code-barres ou crée l'aliment.</p>
+          )}
+          {remote.loading && remote.results.length === 0 && <p className="text-sm text-zinc-500">Recherche en cours…</p>}
           {query.trim().length < 3 && <p className="text-sm text-zinc-500">Tape au moins 3 lettres…</p>}
           {remote.results.map((f) => (
             <FoodRow key={f.barcode ?? f.id} food={f} onClick={() => openFood(f)} />

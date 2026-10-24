@@ -17,13 +17,16 @@ Application web (PWA installable sur téléphone) de suivi **musculation** et **
 ### Nutrition
 - Journal par repas (petit-déj, déjeuner, collations, dîner), anneau des calories restantes et barres de macros.
 - **Scan de code-barres** avec la caméra (API native sur Android/Chrome, ZXing sur iPhone) relié à **[Open Food Facts](https://fr.openfoodfacts.org)**, la base alimentaire libre et collaborative (excellente couverture en France), + saisie manuelle du code.
-- **Recherche** texte dans Open Food Facts (produits vendus en France en priorité) et dans tes aliments.
+- **Recherche** : ~3 400 **aliments génériques de la table Ciqual 2025 (ANSES)** embarqués dans l'appli (instantané, hors connexion) + produits de marque d'Open Food Facts (avec nouvelles tentatives quand leur serveur est surchargé).
 - **Création d'aliment avec photos** du paquet et de l'étiquette, et **lecture automatique du tableau nutritionnel (OCR)** qui pré-remplit kcal, protéines, glucides, sucres, lipides, AGS, fibres et sel — avec contrôle de cohérence.
 - Portions, favoris, récents, **ajout rapide** (kcal/macros), copie du repas de la veille, suivi de **l'hydratation**, Nutri-Score.
 - **Calcul des besoins** (Mifflin-St Jeor × activité, objectif sèche/maintien/masse) et proposition de macros.
 
 ### Progrès
 - Courbe du **poids de corps** (moyenne 7 jours, évolution hebdo), rangs, statistiques (séances/semaine, séries par muscle sur 30 jours, moyennes nutrition).
+
+## Profils
+Plusieurs personnes peuvent utiliser l'appli sur le même appareil : avatar en haut de l'accueil (ou Profil → Profil actif) pour **ajouter / changer de profil**. Chaque profil a sa propre base de données (séances, routines, journal, poids, objectifs) : aucun risque d'écraser les données de l'autre. Sur deux téléphones différents, les données sont de toute façon séparées.
 
 ## Données & confidentialité
 Tout est stocké **localement sur l'appareil** (IndexedDB) : pas de compte ni de serveur. **Export/import JSON** depuis l'onglet Profil pour sauvegarder ou changer de téléphone. L'appli fonctionne hors connexion (sauf recherche/scan Open Food Facts).
@@ -37,6 +40,8 @@ npm test         # tests unitaires (Vitest)
 npm run build    # build de production (dist/)
 npm run format   # Prettier
 ```
+
+Données Ciqual régénérables avec `scripts/ciqual2json.py` à partir des fichiers XML publiés par l'ANSES sur Zenodo.
 
 Stack : React 19 + TypeScript, Vite, Tailwind CSS 4, Dexie (IndexedDB), Recharts, ZXing, Tesseract.js, vite-plugin-pwa.
 

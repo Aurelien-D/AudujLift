@@ -83,15 +83,38 @@ export function offToFood(p: OffProduct): Food | undefined {
   }
 }
 
-async function getJson(url: string, signal?: AbortSignal, retries = 1): Promise<any> {
-  const res = await fetch(url, { signal, headers: { Accept: 'application/json' } })
-  // Open Food Facts renvoie parfois 503 quand le serveur est chargé : on retente une fois
-  if (res.status >= 500 && retries > 0 && !signal?.aborted) {
-    await new Promise((r) => setTimeout(r, 1200))
-    return getJson(url, signal, retries - 1)
+const wait = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    const t = setTimeout(resolve, ms)
+    signal?.addEventListener('abort', () => {
+      clearTimeout(t)
+      reject(new DOMException('Aborted', 'AbortError'))
+    })
+  })
+
+/**
+ * GET JSON avec nouvelles tentatives. Open Food Facts renvoie souvent 503 quand il est surchargé,
+ * sans en-tête CORS : le navigateur ne voit alors qu'une erreur réseau. On retente donc aussi dans ce cas,
+ * en alternant les serveurs proposés.
+ */
+async function getJson(urls: string | string[], signal?: AbortSignal, attempts = 1): Promise<any> {
+  const list = Array.isArray(urls) ? urls : [urls]
+  let lastError: unknown
+  for (let i = 0; i < attempts; i++) {
+    if (i > 0) await wait(600 * 2 ** (i - 1), signal)
+    try {
+      const res = await fetch(list[i % list.length], { signal, headers: { Accept: 'application/json' } })
+      if (res.ok) return await res.json()
+      lastError = new Error(`Open Food Facts indisponible (${res.status})`)
+      if (res.status < 500 && res.status !== 429) break
+    } catch (e) {
+      if (signal?.aborted) throw e
+      lastError = e
+    }
   }
-  if (!res.ok) throw new Error(`Open Food Facts indisponible (${res.status})`)
-  return res.json()
+  throw lastError instanceof Error && lastError.message !== 'Failed to fetch' && lastError.message !== 'Load failed'
+    ? lastError
+    : new Error('Open Food Facts ne répond pas (serveur surchargé)')
 }
 
 /** Remonte en tête les produits dont le nom ou la marque contient tous les mots recherchés. */
@@ -112,7 +135,7 @@ export function rankResults(query: string, foods: Food[]): Food[] {
 
 /** Cherche un produit par code-barres. Renvoie null s'il n'existe pas dans la base. */
 export async function fetchProductByBarcode(barcode: string, signal?: AbortSignal): Promise<Food | null> {
-  const data = await getJson(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=${FIELDS}&lc=fr`, signal)
+  const data = await getJson(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=${FIELDS}&lc=fr`, signal, 3)
   if (data.status !== 1 || !data.product) return null
   return offToFood({ code: barcode, ...data.product }) ?? null
 }
@@ -131,13 +154,7 @@ export async function searchProducts(query: string, signal?: AbortSignal): Promi
     tag_0: 'france',
     fields: FIELDS,
   })
-  let data
-  try {
-    data = await getJson(`https://fr.openfoodfacts.org/cgi/search.pl?${params}`, signal)
-  } catch (e) {
-    if (signal?.aborted) throw e
-    data = await getJson(`https://world.openfoodfacts.org/cgi/search.pl?${params}`, signal)
-  }
+  const data = await getJson([`https://fr.openfoodfacts.org/cgi/search.pl?${params}`, `https://world.openfoodfacts.org/cgi/search.pl?${params}`], signal, 5)
   const products: OffProduct[] = data.products ?? []
   return rankResults(
     query,

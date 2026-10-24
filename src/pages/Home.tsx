@@ -1,10 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ChevronRight, Flame, Play, Plus, Scale, Sparkles } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ProfileAvatar, ProfileSwitcher } from '../components/ProfileSwitcher'
 import { Button, Card, SectionTitle } from '../components/ui'
 import { db } from '../lib/db'
 import { useDoneWorkouts, useExerciseMap, useLatestBodyweight, useSettings } from '../lib/hooks'
+import { activeProfile } from '../lib/profiles'
 import { weeklyStreak, workoutTotals } from '../lib/stats'
 import { cn, formatDate, formatDuration, formatNumber, startOfWeek, toISODate } from '../lib/utils'
 import { NutritionSummary } from './nutrition/Nutrition'
@@ -20,6 +22,9 @@ export default function Home() {
   const bw = useLatestBodyweight()
   const routines = useLiveQuery(() => db.routines.toArray(), [])
   const start = useStartWorkout()
+  const [switcher, setSwitcher] = useState(false)
+  const profile = activeProfile()
+  const name = settings.name || (profile.name !== 'Moi' ? profile.name : '')
 
   const week = useMemo(() => {
     const monday = startOfWeek(new Date())
@@ -54,13 +59,17 @@ export default function Home() {
           <p className="text-sm text-zinc-400">{formatDate(Date.now())}</p>
           <h1 className="text-2xl font-black">
             {hello}
-            {settings.name ? ` ${settings.name}` : ''} 👋
+            {name ? ` ${name}` : ''} 👋
           </h1>
         </div>
-        <div className="text-right">
+        <div className="flex items-center gap-3">
           <div className="text-gradient text-xl font-black tracking-tight">AudujLift</div>
+          <button aria-label="Changer de profil" onClick={() => setSwitcher(true)} className="rounded-full ring-2 ring-zinc-800 active:scale-95">
+            <ProfileAvatar profile={profile} size="sm" />
+          </button>
         </div>
       </header>
+      <ProfileSwitcher open={switcher} onClose={() => setSwitcher(false)} />
 
       {!settings.onboarded && (
         <Card className="mb-4 border-lime-400/30 bg-lime-400/5" onClick={() => navigate('/profile')}>

@@ -1,4 +1,5 @@
-import type { Equipment, Exercise, ExerciseKind, MuscleGroup } from './types'
+import curatedRefs from '../data/curated-refs.json'
+import type { Equipment, Exercise, ExerciseCategory, ExerciseKind, MuscleGroup } from './types'
 
 export const MUSCLE_LABELS: Record<MuscleGroup, string> = {
   pectoraux: 'Pectoraux',
@@ -29,8 +30,41 @@ export const EQUIPMENT_LABELS: Record<Equipment, string> = {
   'barre-ez': 'Barre EZ',
   smith: 'Smith machine',
   elastique: 'Élastique',
+  'medecine-ball': 'Médecine-ball',
+  'swiss-ball': 'Swiss ball',
   autre: 'Autre',
 }
+
+export const CATEGORY_LABELS: Record<ExerciseCategory, string> = {
+  force: 'Musculation',
+  powerlifting: 'Powerlifting',
+  halterophilie: 'Haltérophilie',
+  strongman: 'Strongman',
+  plyometrie: 'Pliométrie',
+  cardio: 'Cardio',
+  etirement: 'Étirement / mobilité',
+}
+
+export const LEVEL_LABELS = { debutant: 'Débutant', intermediaire: 'Intermédiaire', expert: 'Expert' } as const
+
+/** Photos (position de départ / d'arrivée) de Free Exercise DB, domaine public */
+export const EXERCISE_IMAGE_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises'
+export const exerciseImages = (e: Pick<Exercise, 'ref'>) => (e.ref ? [`${EXERCISE_IMAGE_BASE}/${e.ref}/0.jpg`, `${EXERCISE_IMAGE_BASE}/${e.ref}/1.jpg`] : [])
+
+/** Bibliothèque complète (~770 exercices) : [id, nom, muscle, secondaires, équipement, mesure, catégorie, niveau] */
+export type LibraryRow = [string, string, MuscleGroup, MuscleGroup[], Equipment, ExerciseKind, ExerciseCategory, Exercise['level']]
+
+export const libraryRowToExercise = ([id, name, muscle, secondary, equipment, kind, category, level]: LibraryRow): Exercise => ({
+  id,
+  name,
+  muscle,
+  secondary,
+  equipment,
+  kind,
+  category,
+  level,
+  ref: id.slice(3),
+})
 
 export const KIND_LABELS: Record<ExerciseKind, string> = {
   weight_reps: 'Poids × répétitions',
@@ -184,6 +218,8 @@ const ROWS: Row[] = [
   ['jump-rope', 'Corde à sauter', 'cardio', ['mollets'], 'autre', 'duration'],
 ]
 
+const REFS = curatedRefs as Record<string, string>
+
 export const DEFAULT_EXERCISES: Exercise[] = ROWS.map(([id, name, muscle, secondary, equipment, kind = 'weight_reps', standard]) => ({
   id,
   name,
@@ -191,5 +227,8 @@ export const DEFAULT_EXERCISES: Exercise[] = ROWS.map(([id, name, muscle, second
   secondary,
   equipment,
   kind,
+  core: true,
+  category: kind === 'cardio' ? 'cardio' : 'force',
   ...(standard ? { standard } : {}),
+  ...(REFS[id] ? { ref: REFS[id] } : {}),
 }))

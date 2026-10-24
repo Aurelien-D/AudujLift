@@ -18,7 +18,10 @@ export type MuscleGroup =
   | 'cardio'
   | 'corps-entier'
 
-export type Equipment = 'barre' | 'halteres' | 'machine' | 'poulie' | 'poids-du-corps' | 'kettlebell' | 'barre-ez' | 'smith' | 'elastique' | 'autre'
+export type Equipment =
+  'barre' | 'halteres' | 'machine' | 'poulie' | 'poids-du-corps' | 'kettlebell' | 'barre-ez' | 'smith' | 'elastique' | 'medecine-ball' | 'swiss-ball' | 'autre'
+
+export type ExerciseCategory = 'force' | 'powerlifting' | 'halterophilie' | 'strongman' | 'plyometrie' | 'cardio' | 'etirement'
 
 /** Comment une série est mesurée */
 export type ExerciseKind = 'weight_reps' | 'bodyweight' | 'duration' | 'cardio'
@@ -34,6 +37,12 @@ export interface Exercise {
   standard?: number
   custom?: boolean
   notes?: string
+  /** Exercice de la sélection de base (mis en avant dans les listes) */
+  core?: boolean
+  category?: ExerciseCategory
+  level?: 'debutant' | 'intermediaire' | 'expert'
+  /** Identifiant dans Free Exercise DB (photos et consignes) */
+  ref?: string
 }
 
 export type SetType = 'warmup' | 'normal' | 'drop' | 'failure'

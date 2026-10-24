@@ -1,18 +1,40 @@
 import { Check, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { db } from '../lib/db'
-import { EQUIPMENT_LABELS, KIND_LABELS, MUSCLE_LABELS } from '../lib/exercises-data'
+import { EQUIPMENT_LABELS, exerciseImages, KIND_LABELS, MUSCLE_LABELS } from '../lib/exercises-data'
 import { useExercises } from '../lib/hooks'
 import type { Equipment, Exercise, ExerciseKind, MuscleGroup } from '../lib/types'
-import { cn, normalize, uid } from '../lib/utils'
+import { filterExercises } from '../lib/exercise-search'
+import { cn, uid } from '../lib/utils'
 import { Button, Chip, Field, inputClass, Select, Sheet } from './ui'
 
-export function filterExercises(list: Exercise[], query: string, muscle: MuscleGroup | 'all') {
-  const q = normalize(query.trim())
-  return list.filter(
-    (e) =>
-      (muscle === 'all' || e.muscle === muscle || e.secondary.includes(muscle)) &&
-      (!q || normalize(e.name).includes(q) || normalize(MUSCLE_LABELS[e.muscle]).includes(q) || normalize(EQUIPMENT_LABELS[e.equipment]).includes(q)),
+/** Nombre d'exercices affichés par page (la liste complète en compte ~900) */
+export const PAGE = 120
+
+export function EquipmentSelect({ value, onChange }: { value: Equipment | 'all'; onChange: (v: Equipment | 'all') => void }) {
+  return (
+    <div className="w-36 shrink-0">
+      <Select
+        value={value}
+        onChange={onChange}
+        className="py-2.5 pr-2 text-sm"
+        options={[{ value: 'all' as const, label: 'Tout matériel' }, ...Object.entries(EQUIPMENT_LABELS).map(([v, label]) => ({ value: v as Equipment, label }))]}
+      />
+    </div>
+  )
+}
+
+export function ExerciseThumb({ exercise, selected }: { exercise: Exercise; selected?: boolean }) {
+  const [img] = exerciseImages(exercise)
+  return (
+    <div
+      className={cn(
+        'flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold',
+        selected ? 'bg-lime-400 text-zinc-950' : 'bg-zinc-800 text-zinc-300',
+      )}
+    >
+      {selected ? <Check size={20} /> : img ? <img src={img} alt="" loading="lazy" className="size-full object-cover" /> : exercise.name.charAt(0)}
+    </div>
   )
 }
 
@@ -34,9 +56,7 @@ export function MuscleChips({ value, onChange }: { value: MuscleGroup | 'all'; o
 export function ExerciseRow({ exercise, selected, onClick, right }: { exercise: Exercise; selected?: boolean; onClick: () => void; right?: React.ReactNode }) {
   return (
     <button onClick={onClick} className={cn('flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition active:bg-zinc-800', selected && 'bg-lime-400/10')}>
-      <div className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold', selected ? 'bg-lime-400 text-zinc-950' : 'bg-zinc-800 text-zinc-300')}>
-        {selected ? <Check size={20} /> : exercise.name.charAt(0)}
-      </div>
+      <ExerciseThumb exercise={exercise} selected={selected} />
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium">{exercise.name}</div>
         <div className="truncate text-xs text-zinc-400">
@@ -65,9 +85,11 @@ export function ExercisePicker({
   const all = useExercises()
   const [query, setQuery] = useState('')
   const [muscle, setMuscle] = useState<MuscleGroup | 'all'>('all')
+  const [equipment, setEquipment] = useState<Equipment | 'all'>('all')
+  const [limit, setLimit] = useState(PAGE)
   const [selected, setSelected] = useState<Exercise[]>([])
   const [creating, setCreating] = useState(false)
-  const list = useMemo(() => filterExercises(all ?? [], query, muscle), [all, query, muscle])
+  const list = useMemo(() => filterExercises(all ?? [], query, muscle, equipment), [all, query, muscle, equipment])
 
   const close = () => {
     setSelected([])
@@ -86,9 +108,20 @@ export function ExercisePicker({
   return (
     <Sheet open={open} onClose={close} title={title} full>
       <div className="sticky top-0 z-10 -mx-4 bg-zinc-900 px-4 pb-1">
-        <div className="relative">
-          <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un exercice" className={cn(inputClass, 'pl-10')} />
+        <div className="flex gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setLimit(PAGE)
+              }}
+              placeholder={`Rechercher parmi ${all?.length ?? ''} exercices`}
+              className={cn(inputClass, 'pl-10')}
+            />
+          </div>
+          <EquipmentSelect value={equipment} onChange={setEquipment} />
         </div>
         <MuscleChips value={muscle} onChange={setMuscle} />
       </div>
@@ -98,9 +131,14 @@ export function ExercisePicker({
         </div>
         Créer un exercice personnalisé
       </button>
-      {list.map((e) => (
+      {list.slice(0, limit).map((e) => (
         <ExerciseRow key={e.id} exercise={e} selected={selected.some((s) => s.id === e.id)} onClick={() => toggle(e)} />
       ))}
+      {list.length > limit && (
+        <Button variant="ghost" className="w-full" onClick={() => setLimit((l) => l + PAGE)}>
+          Afficher plus ({list.length - limit} restants)
+        </Button>
+      )}
       {list.length === 0 && <p className="py-8 text-center text-sm text-zinc-400">Aucun exercice trouvé.</p>}
       {multiple && selected.length > 0 && (
         <div className="sticky bottom-0 -mx-4 bg-gradient-to-t from-zinc-900 via-zinc-900 px-4 pt-6 pb-1">

@@ -9,6 +9,7 @@ import { ensureFood, lookupBarcode } from '../../lib/foods'
 import { kcalFromMacros, MEAL_LABELS, MEALS } from '../../lib/nutrition'
 import { searchCiqual } from '../../lib/ciqual'
 import { searchProducts } from '../../lib/off'
+import { searchPopularProducts } from '../../lib/offline-products'
 import type { Food, Meal } from '../../lib/types'
 import { cn, normalize, toISODate, uid } from '../../lib/utils'
 
@@ -64,6 +65,7 @@ export default function AddFood() {
   const [remote, setRemote] = useState<{ loading: boolean; error?: string; results: Food[] }>({ loading: false, results: [] })
   const [scanStatus, setScanStatus] = useState<string | null>(null)
   const [generic, setGeneric] = useState<Food[]>([])
+  const [popular, setPopular] = useState<Food[]>([])
   const [retry, setRetry] = useState(0)
 
   const foods = useLiveQuery(() => db.foods.toArray(), [])
@@ -83,6 +85,17 @@ export default function AddFood() {
   }, [foods, query, tab])
 
   const genericShown = generic.filter((g) => !local.some((l) => l.id === g.id)).slice(0, 8)
+  // Produits de marque : sélection hors ligne d'abord (instantanée), complétée par la recherche en ligne
+  const brands = useMemo(() => {
+    const seen = new Set(local.map((l) => l.barcode).filter(Boolean))
+    const out: Food[] = []
+    for (const f of [...popular, ...remote.results]) {
+      if (f.barcode && seen.has(f.barcode)) continue
+      if (f.barcode) seen.add(f.barcode)
+      out.push(f)
+    }
+    return out.slice(0, 40)
+  }, [popular, remote.results, local])
 
   // Aliments génériques Ciqual : recherche locale, instantanée et hors connexion
   useEffect(() => {
@@ -90,9 +103,11 @@ export default function AddFood() {
     const q = query.trim()
     if (q.length < 2) {
       setGeneric([])
+      setPopular([])
       return
     }
     searchCiqual(q).then((r) => !cancelled && setGeneric(r))
+    searchPopularProducts(q).then((r) => !cancelled && setPopular(r))
     return () => {
       cancelled = true
     }
@@ -201,23 +216,26 @@ export default function AddFood() {
               ))}
             </>
           )}
-          <SectionTitle action={remote.loading && <Loader2 size={16} className="animate-spin text-zinc-400" />}>Produits de marque · Open Food Facts</SectionTitle>
+          <SectionTitle action={remote.loading && <Loader2 size={16} className="animate-spin text-zinc-400" />}>Produits de marque</SectionTitle>
+          {brands.map((f) => (
+            <FoodRow key={f.barcode ?? f.id} food={f} onClick={() => openFood(f)} />
+          ))}
           {remote.error && (
-            <div className="flex items-center gap-3 rounded-xl bg-rose-500/10 p-3 text-sm text-rose-300">
-              <span className="flex-1">{remote.error}. Le scan de code-barres reste disponible.</span>
+            <div className="mt-2 flex items-center gap-3 rounded-xl bg-zinc-800/60 p-3 text-sm text-zinc-300">
+              <span className="flex-1">
+                {brands.length ? 'Résultats hors ligne uniquement : ' : ''}
+                {remote.error}.
+              </span>
               <Button size="sm" variant="secondary" onClick={() => setRetry((n) => n + 1)}>
                 Réessayer
               </Button>
             </div>
           )}
-          {!remote.loading && !remote.error && query.trim().length >= 3 && remote.results.length === 0 && (
+          {!remote.loading && !remote.error && query.trim().length >= 3 && brands.length === 0 && (
             <p className="text-sm text-zinc-400">Aucun produit de marque trouvé. Essaie un autre mot-clé, scanne le code-barres ou crée l'aliment.</p>
           )}
-          {remote.loading && remote.results.length === 0 && <p className="text-sm text-zinc-400">Recherche en cours…</p>}
-          {query.trim().length < 3 && <p className="text-sm text-zinc-400">Tape au moins 3 lettres…</p>}
-          {remote.results.map((f) => (
-            <FoodRow key={f.barcode ?? f.id} food={f} onClick={() => openFood(f)} />
-          ))}
+          {remote.loading && brands.length === 0 && <p className="text-sm text-zinc-400">Recherche en cours…</p>}
+          {query.trim().length < 3 && brands.length === 0 && <p className="text-sm text-zinc-400">Tape au moins 3 lettres…</p>}
         </>
       ) : (
         <>

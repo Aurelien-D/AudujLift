@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import { DEFAULT_EXERCISES } from './exercises-data'
+import { DEFAULT_EXERCISES, libraryRowToExercise, type LibraryRow } from './exercises-data'
 import { activeProfileId, dbNameFor } from './profiles'
 import type { BodyWeight, DayLog, Exercise, Food, FoodEntry, Routine, Settings, Workout } from './types'
 
@@ -54,11 +54,27 @@ export class AudujLiftDB extends Dexie {
 /** Base du profil actif */
 export const db = new AudujLiftDB(dbNameFor(activeProfileId()))
 
-/** Ajoute les exercices par défaut manquants (nouvelles versions de la bibliothèque). */
+/** Version de la bibliothèque d'exercices : l'incrémenter pour pousser de nouveaux exercices. */
+const LIBRARY_VERSION = '2'
+
+/**
+ * Ajoute les exercices de la bibliothèque absents de la base du profil, et complète les exercices
+ * de base déjà présents (photos, catégorie) sans écraser ce que l'utilisateur a modifié.
+ */
 export async function syncDefaultExercises() {
-  const existing = new Set(await db.exercises.toCollection().primaryKeys())
-  const missing = DEFAULT_EXERCISES.filter((e) => !existing.has(e.id))
-  if (missing.length) await db.exercises.bulkAdd(missing)
+  const key = `audujlift.exerciseLibrary.${db.name}`
+  if (localStorage.getItem(key) === LIBRARY_VERSION) return
+  const { default: rows } = await import('../data/exercise-library.json')
+  const library = [...DEFAULT_EXERCISES, ...(rows as LibraryRow[]).map(libraryRowToExercise)]
+  await db.transaction('rw', db.exercises, async () => {
+    const existing = new Map((await db.exercises.toArray()).map((e) => [e.id, e]))
+    await db.exercises.bulkAdd(library.filter((e) => !existing.has(e.id)))
+    for (const e of DEFAULT_EXERCISES) {
+      const cur = existing.get(e.id)
+      if (cur && !cur.custom && !cur.ref) await db.exercises.update(e.id, { core: true, category: e.category, ref: e.ref })
+    }
+  })
+  localStorage.setItem(key, LIBRARY_VERSION)
 }
 
 export async function getSettings(): Promise<Settings> {

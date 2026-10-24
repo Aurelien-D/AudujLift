@@ -1,10 +1,11 @@
 import { Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ExerciseForm, ExerciseRow, filterExercises, MuscleChips } from '../../components/ExercisePicker'
-import { IconButton, inputClass, Page } from '../../components/ui'
+import { EquipmentSelect, ExerciseForm, ExerciseRow, MuscleChips, PAGE } from '../../components/ExercisePicker'
+import { filterExercises } from '../../lib/exercise-search'
+import { Button, IconButton, inputClass, Page } from '../../components/ui'
 import { useDoneWorkouts, useExercises } from '../../lib/hooks'
-import type { MuscleGroup } from '../../lib/types'
+import type { Equipment, MuscleGroup } from '../../lib/types'
 import { cn } from '../../lib/utils'
 
 export default function ExerciseLibrary() {
@@ -13,6 +14,8 @@ export default function ExerciseLibrary() {
   const workouts = useDoneWorkouts()
   const [query, setQuery] = useState('')
   const [muscle, setMuscle] = useState<MuscleGroup | 'all'>('all')
+  const [equipment, setEquipment] = useState<Equipment | 'all'>('all')
+  const [limit, setLimit] = useState(PAGE)
   const [creating, setCreating] = useState(false)
 
   const usage = useMemo(() => {
@@ -20,7 +23,7 @@ export default function ExerciseLibrary() {
     for (const w of workouts ?? []) for (const e of w.exercises) m.set(e.exerciseId, (m.get(e.exerciseId) ?? 0) + 1)
     return m
   }, [workouts])
-  const list = useMemo(() => filterExercises(all ?? [], query, muscle), [all, query, muscle])
+  const list = useMemo(() => filterExercises(all ?? [], query, muscle, equipment), [all, query, muscle, equipment])
 
   return (
     <Page
@@ -33,13 +36,24 @@ export default function ExerciseLibrary() {
         </IconButton>
       }
     >
-      <div className="relative">
-        <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher" className={cn(inputClass, 'pl-10')} />
+      <div className="flex gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setLimit(PAGE)
+            }}
+            placeholder="Rechercher"
+            className={cn(inputClass, 'pl-10')}
+          />
+        </div>
+        <EquipmentSelect value={equipment} onChange={setEquipment} />
       </div>
       <MuscleChips value={muscle} onChange={setMuscle} />
       <div className="mt-1">
-        {list.map((e) => (
+        {list.slice(0, limit).map((e) => (
           <ExerciseRow
             key={e.id}
             exercise={e}
@@ -48,6 +62,12 @@ export default function ExerciseLibrary() {
           />
         ))}
       </div>
+      {list.length > limit && (
+        <Button variant="ghost" className="w-full" onClick={() => setLimit((l) => l + PAGE)}>
+          Afficher plus ({list.length - limit} restants)
+        </Button>
+      )}
+      {list.length === 0 && <p className="py-8 text-center text-sm text-zinc-400">Aucun exercice trouvé.</p>}
       {creating && <ExerciseForm open initialName={query} onClose={() => setCreating(false)} onSaved={(e) => navigate(`/exercises/${e.id}`)} />}
     </Page>
   )

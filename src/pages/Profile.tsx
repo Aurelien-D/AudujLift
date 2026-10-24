@@ -8,6 +8,8 @@ import { db, saveSettings } from '../lib/db'
 import { useLatestBodyweight, useSettings } from '../lib/hooks'
 import { ACTIVITY_LABELS, GOAL_LABELS, suggestGoals } from '../lib/nutrition'
 import { forgetOffAccount, offAccount } from '../lib/off-contribute'
+import { aiKey, aiUsage, forgetAiKey, maskKey } from '../lib/plate-ai'
+import { AiKeySetup } from './nutrition/PlatePhoto'
 import { activeProfile, listProfiles, renameProfile } from '../lib/profiles'
 import type { Activity, Goal, Settings } from '../lib/types'
 import { formatClock, formatShortDate, toISODate, uid } from '../lib/utils'
@@ -22,6 +24,8 @@ export default function Profile() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [switcher, setSwitcher] = useState(false)
   const [offUser, setOffUser] = useState(() => offAccount()?.userId)
+  const [aiKeyValue, setAiKeyValue] = useState(() => aiKey())
+  const usage = aiUsage()
   const profile = activeProfile()
 
   useEffect(() => {
@@ -233,6 +237,36 @@ export default function Profile() {
             hint="Évite de déverrouiller le téléphone entre les séries."
           />
         </div>
+      </Card>
+
+      <SectionTitle>Analyse d'assiette (IA)</SectionTitle>
+      <Card>
+        {aiKeyValue ? (
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-silver">
+                Clé Anthropic : <span className="text-ivory-dim">{maskKey(aiKeyValue)}</span>
+              </span>
+              <Button
+                variant="tertiary"
+                size="sm"
+                onClick={() => {
+                  if (!confirm('Effacer la clé de ce téléphone ?')) return
+                  forgetAiKey()
+                  setAiKeyValue(null)
+                }}
+              >
+                Effacer
+              </Button>
+            </div>
+            <p className="text-xs text-silver">
+              Ce mois-ci : {usage.photos} photo{usage.photos > 1 ? 's' : ''} analysée{usage.photos > 1 ? 's' : ''} · environ {usage.costUsd.toFixed(2).replace('.', ',')} $
+              (estimation ; le montant exact est dans la console Anthropic).
+            </p>
+          </div>
+        ) : (
+          <AiKeySetup onSaved={() => setAiKeyValue(aiKey())} />
+        )}
       </Card>
 
       <SectionTitle>Mes données</SectionTitle>

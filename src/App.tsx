@@ -13,7 +13,10 @@ const AddFood = lazy(() => import('./pages/nutrition/AddFood'))
 const FoodDetail = lazy(() => import('./pages/nutrition/FoodDetail'))
 const FoodEditor = lazy(() => import('./pages/nutrition/FoodEditor'))
 const Nutrition = lazy(() => import('./pages/nutrition/Nutrition'))
+const RecipeEditor = lazy(() => import('./pages/nutrition/RecipeEditor'))
+const ShoppingList = lazy(() => import('./pages/nutrition/ShoppingList'))
 const Progress = lazy(() => import('./pages/progress/Progress'))
+const WeeklyRecap = lazy(() => import('./pages/progress/WeeklyRecap'))
 const ActiveWorkout = lazy(() => import('./pages/workout/ActiveWorkout'))
 const ExerciseDetail = lazy(() => import('./pages/workout/ExerciseDetail'))
 const ExerciseLibrary = lazy(() => import('./pages/workout/ExerciseLibrary'))
@@ -54,7 +57,11 @@ function Shell() {
             <Route path="/nutrition/food/new" element={<FoodEditor />} />
             <Route path="/nutrition/food/:id/edit" element={<FoodEditor />} />
             <Route path="/nutrition/food/:id" element={<FoodDetail />} />
+            <Route path="/nutrition/recipe/new" element={<RecipeEditor />} />
+            <Route path="/nutrition/recipe/:id" element={<RecipeEditor />} />
+            <Route path="/nutrition/shopping" element={<ShoppingList />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/recap" element={<WeeklyRecap />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

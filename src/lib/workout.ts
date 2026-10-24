@@ -24,16 +24,19 @@ async function latestBodyweight() {
  * Séries préremplies avec les valeurs de la dernière séance pour cet exercice,
  * avec +2,5 kg si toutes les reps visées avaient été réussies.
  */
-async function prefillFromHistory(exerciseId: string, template: SetData[]): Promise<{ sets: WorkoutSet[]; progression?: { from: number; to: number } }> {
+async function prefillFromHistory(exerciseId: string, template: SetData[]): Promise<{ sets: WorkoutSet[]; progression?: { from: number; to: number }; deload?: number }> {
   const ex = await db.exercises.get(exerciseId)
   const settings = await getSettings()
   const done = await db.workouts.where('status').equals('done').reverse().sortBy('startedAt')
   const last = ex ? exerciseHistory(ex, done.slice(0, 60))[0] : undefined
-  const progression = settings.autoProgression && ex?.kind === 'weight_reps' ? progressedWeight(template, last?.sets) : undefined
+  const plan = settings.deloads?.[exerciseId]
+  const deload = plan && plan.until > Date.now() ? plan.weight : undefined
+  const progression = !deload && settings.autoProgression && ex?.kind === 'weight_reps' ? progressedWeight(template, last?.sets) : undefined
   const sets = template.map((s, i) => {
     const prev = last?.sets.filter((p) => p.type === s.type)[template.slice(0, i).filter((t) => t.type === s.type).length]
     let weight = s.weight ?? prev?.weight
     if (progression && s.type === 'normal' && weight === progression.from) weight = progression.to
+    if (deload != null && s.type !== 'warmup' && weight != null && weight > deload) weight = deload
     return {
       type: s.type,
       weight,
@@ -43,7 +46,7 @@ async function prefillFromHistory(exerciseId: string, template: SetData[]): Prom
       done: false,
     }
   })
-  return { sets, progression }
+  return { sets, progression, deload }
 }
 
 export async function startWorkout(routine?: Routine): Promise<string> {
@@ -51,8 +54,8 @@ export async function startWorkout(routine?: Routine): Promise<string> {
   if (existing) return existing.id
   const exercises: WorkoutExercise[] = []
   for (const re of routine?.exercises ?? []) {
-    const { sets, progression } = await prefillFromHistory(re.exerciseId, re.sets.length ? re.sets : [{ type: 'normal' }])
-    exercises.push({ uid: uid(), exerciseId: re.exerciseId, restSec: re.restSec, notes: re.notes, supersetId: re.supersetId, sets, progression })
+    const { sets, progression, deload } = await prefillFromHistory(re.exerciseId, re.sets.length ? re.sets : [{ type: 'normal' }])
+    exercises.push({ uid: uid(), exerciseId: re.exerciseId, restSec: re.restSec, notes: re.notes, supersetId: re.supersetId, sets, progression, deload })
   }
   const now = new Date()
   const hour = now.getHours()
@@ -73,8 +76,8 @@ export async function startWorkout(routine?: Routine): Promise<string> {
 
 export async function newWorkoutExercise(exercise: Exercise): Promise<WorkoutExercise> {
   const settings = await getSettings()
-  const { sets } = await prefillFromHistory(exercise.id, [{ type: 'normal' }, { type: 'normal' }, { type: 'normal' }])
-  return { uid: uid(), exerciseId: exercise.id, restSec: settings.defaultRestSec, sets }
+  const { sets, deload } = await prefillFromHistory(exercise.id, [{ type: 'normal' }, { type: 'normal' }, { type: 'normal' }])
+  return { uid: uid(), exerciseId: exercise.id, restSec: settings.defaultRestSec, sets, deload }
 }
 
 export function newRoutineExercise(exercise: Exercise, restSec: number): RoutineExercise {

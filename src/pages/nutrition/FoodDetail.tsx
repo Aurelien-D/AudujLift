@@ -1,13 +1,15 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Pencil, Star, Trash2 } from 'lucide-react'
+import { ChefHat, Minus, Pencil, Plus, ShoppingCart, Star, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Button, Card, Chip, IconButton, NumberInput, Page, Ring } from '../../components/ui'
 import { db } from '../../lib/db'
 import { logFood } from '../../lib/foods'
+import { formatQuantity } from '../../lib/kitchen'
+import { addToShopping } from '../../lib/shopping'
 import { useSettings } from '../../lib/hooks'
 import { defaultQuantity, MEAL_LABELS, MEALS, scaleNutrients } from '../../lib/nutrition'
-import type { Meal, Nutrients } from '../../lib/types'
+import type { Food, Meal, Nutrients } from '../../lib/types'
 import { cn, formatNumber, toISODate } from '../../lib/utils'
 import { defaultMeal, NutriScore } from './AddFood'
 import { OffContribute } from './OffContribute'
@@ -76,7 +78,7 @@ export default function FoodDetail() {
           <IconButton aria-label="Favori" onClick={() => db.foods.update(food.id, { favorite: !food.favorite })}>
             <Star size={22} className={food.favorite ? 'fill-gold text-gold' : ''} />
           </IconButton>
-          <IconButton aria-label="Modifier l'aliment" onClick={() => navigate(`/nutrition/food/${food.id}/edit`)}>
+          <IconButton aria-label="Modifier l'aliment" onClick={() => navigate(food.recipe ? `/nutrition/recipe/${food.id}` : `/nutrition/food/${food.id}/edit`)}>
             <Pencil size={20} />
           </IconButton>
         </>
@@ -193,6 +195,7 @@ export default function FoodDetail() {
           <NutriScore grade={food.nutriscore} />
         </span>
       </div>
+      {food.recipe && <RecipeCard food={food} />}
       <OffContribute food={food} />
       {food.photos && food.photos.filter(Boolean).length > 1 && (
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -202,5 +205,54 @@ export default function FoodDetail() {
         </div>
       )}
     </Page>
+  )
+}
+
+/** Ingrédients d'une recette, avec ajout à la liste de courses pour le nombre de portions voulu. */
+function RecipeCard({ food }: { food: Food }) {
+  const recipe = food.recipe!
+  const [portions, setPortions] = useState(recipe.portions)
+  const factor = portions / Math.max(1, recipe.portions)
+  return (
+    <Card className="mt-4">
+      <div className="mb-2 flex items-center gap-2">
+        <ChefHat size={18} className="text-gold" />
+        <h2 className="font-semibold">Ingrédients</h2>
+        <span className="ml-auto flex items-center gap-1 text-sm text-silver">
+          <button
+            aria-label="Moins de portions"
+            onClick={() => setPortions((p) => Math.max(1, p - 1))}
+            className="press flex size-8 items-center justify-center rounded-lg bg-raised"
+          >
+            <Minus size={14} />
+          </button>
+          <span className="w-20 text-center">
+            {portions} portion{portions > 1 ? 's' : ''}
+          </span>
+          <button aria-label="Plus de portions" onClick={() => setPortions((p) => p + 1)} className="press flex size-8 items-center justify-center rounded-lg bg-raised">
+            <Plus size={14} />
+          </button>
+        </span>
+      </div>
+      <ul className="divide-y divide-line/50 text-sm">
+        {recipe.ingredients.map((i, k) => (
+          <li key={k} className="flex justify-between gap-3 py-2">
+            <span className="truncate text-ivory-dim">{i.name}</span>
+            <span className="shrink-0 text-ivory">{formatQuantity(i.quantity * factor, i.unit)}</span>
+          </li>
+        ))}
+      </ul>
+      <Button
+        variant="secondary"
+        size="sm"
+        className="mt-3 w-full"
+        onClick={async () => {
+          await addToShopping(recipe.ingredients.map((i) => ({ foodId: i.foodId, name: i.name, quantity: Math.round(i.quantity * factor), unit: i.unit })))
+          alert(`Ingrédients pour ${portions} portion${portions > 1 ? 's' : ''} ajoutés à la liste de courses.`)
+        }}
+      >
+        <ShoppingCart size={16} /> Ajouter à la liste de courses
+      </Button>
+    </Card>
   )
 }

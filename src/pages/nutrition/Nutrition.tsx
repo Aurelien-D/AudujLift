@@ -1,5 +1,21 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Apple, ChevronLeft, ChevronRight, Coffee, Copy, Droplets, Dumbbell, Minus, Moon, MoreHorizontal, Plus, ScanBarcode, Star, UtensilsCrossed } from 'lucide-react'
+import {
+  Apple,
+  ChevronLeft,
+  ChevronRight,
+  Coffee,
+  Copy,
+  Droplets,
+  Dumbbell,
+  Minus,
+  Moon,
+  MoreHorizontal,
+  Plus,
+  ScanBarcode,
+  ShoppingCart,
+  Star,
+  UtensilsCrossed,
+} from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ActionList, Card, IconButton, MacroBar, MacroLine, Page, Ring, Sheet } from '../../components/ui'
@@ -9,6 +25,7 @@ import { useDayType, useSettings } from '../../lib/hooks'
 import { goalsForDay, MEAL_LABELS, MEALS, sumNutrients } from '../../lib/nutrition'
 import type { FoodEntry, Meal } from '../../lib/types'
 import { addDays, cn, formatDayLabel, formatNumber, toISODate, uid } from '../../lib/utils'
+import { DayQualityCard } from './DayQualityCard'
 import { SmartCalories } from './SmartCalories'
 
 const MEAL_ICON: Record<Meal, typeof Coffee> = { breakfast: Coffee, lunch: UtensilsCrossed, snack: Apple, dinner: Moon }
@@ -112,9 +129,14 @@ export default function Nutrition() {
     <Page
       title="Nutrition"
       actions={
-        <IconButton aria-label="Scanner" onClick={() => navigate(`/nutrition/add?date=${date}&scan=1`)}>
-          <ScanBarcode size={22} />
-        </IconButton>
+        <>
+          <IconButton aria-label="Liste de courses" onClick={() => navigate('/nutrition/shopping')}>
+            <ShoppingCart size={21} />
+          </IconButton>
+          <IconButton aria-label="Scanner" onClick={() => navigate(`/nutrition/add?date=${date}&scan=1`)}>
+            <ScanBarcode size={22} />
+          </IconButton>
+        </>
       }
     >
       <div className="mb-3 flex items-center justify-between">
@@ -132,6 +154,7 @@ export default function Nutrition() {
 
       <NutritionSummary date={date} />
       {date === toISODate() && <SmartCalories />}
+      <DayQualityCard date={date} kcalGoal={settings.goals.kcal} />
 
       <div className="mt-4 space-y-3">
         {MEALS.map((meal) => {

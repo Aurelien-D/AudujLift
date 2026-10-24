@@ -1,4 +1,23 @@
-import { ArrowDown, ArrowUp, Calculator, Check, ChevronDown, Flame, LineChart, Link2, MoreVertical, Plus, RefreshCw, StickyNote, Trash2, TrendingUp, Unlink, X } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  Calculator,
+  Check,
+  ChevronDown,
+  Flame,
+  LineChart,
+  Link2,
+  MoreVertical,
+  Plus,
+  RefreshCw,
+  StickyNote,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  Unlink,
+  X,
+  Gauge,
+} from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ExercisePicker, ExerciseThumb } from '../../components/ExercisePicker'
@@ -9,6 +28,7 @@ import { columnsFor, formatSet, readCol, RestSelect, RpePicker, setLabels, SetSt
 import { db } from '../../lib/db'
 import { MUSCLE_LABELS } from '../../lib/exercises-data'
 import { useDoneWorkouts, useExerciseMap, useNow, useSettings } from '../../lib/hooks'
+import { rpeLoadSuggestion } from '../../lib/insights'
 import { usesBar, warmupSets } from '../../lib/progression'
 import { restTimer, unlockAudio } from '../../lib/restTimer'
 import { e1rm, effectiveLoad, exerciseHistory, personalRecords, workoutTotals } from '../../lib/stats'
@@ -50,6 +70,7 @@ export default function ActiveWorkout() {
   const [showNotes, setShowNotes] = useState<Record<string, boolean>>({})
   const [editName, setEditName] = useState(false)
   const [rpeFor, setRpeFor] = useState<{ ex: string; idx: number } | null>(null)
+  const [rpeHint, setRpeHint] = useState<{ ex: string; idx: number; weight: number; planned: number; rpe: number } | null>(null)
   const [record, setRecord] = useState<{ name: string; from: number; to: number } | null>(null)
   const [undo, setUndo] = useState<{ ex: string; idx: number; set: WorkoutSet } | null>(null)
 
@@ -151,6 +172,7 @@ export default function ActiveWorkout() {
     // Valide avec la valeur précédente si le champ est vide
     for (const col of columnsFor(kind)) if (s[col.key] == null && prev?.[col.key] != null) patch[col.key] = prev[col.key]
     updateSet(we.uid, idx, patch)
+    if (rpeHint?.ex === we.uid) setRpeHint(null)
     navigator.vibrate?.(15)
     checkRecord(ex, we, idx, { ...s, ...patch })
     setRpeFor(settings.askRpe && (kind === 'weight_reps' || kind === 'bodyweight') && s.type !== 'warmup' ? { ex: we.uid, idx } : null)
@@ -164,6 +186,27 @@ export default function ActiveWorkout() {
     const finished = we.sets.every((x, j) => j === idx || x.done)
     if (finished && next && next.we.uid !== we.uid)
       setTimeout(() => document.getElementById(`ex-${next.we.uid}`)?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' }), 250)
+  }
+
+  /** Après une note d'effort, propose la charge de la série suivante (RPE 8 visé). */
+  const suggestFromRpe = (we: WorkoutExercise, idx: number, rpe: number | undefined) => {
+    setRpeHint(null)
+    const s = we.sets[idx]
+    if (rpe == null || kindOf(we) !== 'weight_reps' || !s.weight || !s.reps) return
+    const j = we.sets.findIndex((x, k) => k > idx && !x.done && x.type !== 'warmup')
+    if (j < 0) return
+    const next = we.sets[j]
+    const planned = next.weight ?? s.weight
+    const weight = rpeLoadSuggestion({ weight: s.weight, reps: s.reps, rpe }, { weight: planned, reps: next.reps ?? s.reps })
+    if (weight != null) setRpeHint({ ex: we.uid, idx: j, weight, planned, rpe })
+  }
+
+  /** Applique la charge conseillée à toutes les séries restantes prévues à la même charge. */
+  const applyRpeHint = (exUid: string) => {
+    if (!rpeHint) return
+    const { idx, weight, planned } = rpeHint
+    updateEx(exUid, (e) => ({ ...e, sets: e.sets.map((x, k) => (k >= idx && !x.done && x.type !== 'warmup' && (x.weight ?? planned) === planned ? { ...x, weight } : x)) }))
+    setRpeHint(null)
   }
 
   const deleteSet = (exUid: string, idx: number) => {
@@ -333,6 +376,12 @@ export default function ActiveWorkout() {
                       <MoreVertical size={18} />
                     </IconButton>
                   </div>
+                  {we.deload != null && (
+                    <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-warn/10 px-2 py-1.5 text-xs text-warn">
+                      <TrendingDown size={14} className="shrink-0" />
+                      <span>Semaine allégée : charge plafonnée à {formatNumber(we.deload)} kg pour relancer la progression</span>
+                    </div>
+                  )}
                   {we.progression && (
                     <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-gold/10 px-2 py-1.5 text-xs text-gold-pale">
                       <TrendingUp size={14} className="shrink-0 text-gold" />
@@ -412,6 +461,20 @@ export default function ActiveWorkout() {
                           </button>
                         </div>
                       </SwipeRow>
+                      {isActive && rpeHint?.ex === we.uid && rpeHint.idx === i && (
+                        <div className="animate-fade mt-1.5 flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/8 px-3 py-2 text-xs">
+                          <Gauge size={16} className="shrink-0 text-gold" />
+                          <span className="min-w-0 flex-1 text-ivory-dim">
+                            Effort {rpeHint.rpe}/10 : vise <b className="text-gold">{formatNumber(rpeHint.weight)} kg</b> (prévu {formatNumber(rpeHint.planned)} kg)
+                          </span>
+                          <button onClick={() => applyRpeHint(we.uid)} className="press rounded-lg bg-gold px-2.5 py-1.5 font-semibold text-ink">
+                            Appliquer
+                          </button>
+                          <button aria-label="Ignorer" onClick={() => setRpeHint(null)} className="press px-1 text-silver">
+                            ✕
+                          </button>
+                        </div>
+                      )}
                       {isActive && <SetStepper set={s} cols={cols} onChange={(key, v) => updateSet(we.uid, i, { [key]: v })} />}
                       {rpeFor?.ex === we.uid && rpeFor.idx === i && s.done && (
                         <RpePicker
@@ -419,6 +482,7 @@ export default function ActiveWorkout() {
                           onPick={(v) => {
                             updateSet(we.uid, i, { rpe: v })
                             setRpeFor(null)
+                            suggestFromRpe(we, i, v)
                           }}
                           onClose={() => setRpeFor(null)}
                         />

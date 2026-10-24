@@ -179,3 +179,130 @@ export async function shareRecap(blob: Blob, filename: string, title: string): P
   setTimeout(() => URL.revokeObjectURL(url), 1000)
   return 'downloaded'
 }
+
+/** Image du bilan de la semaine (1080 × 1350). */
+export async function renderWeekRecap(d: {
+  title: string
+  stats: [string, string][]
+  lines: { label: string; value: string }[]
+  records: { label: string; value: string }[]
+  tip: string
+}): Promise<Blob> {
+  const W = 1080
+  const H = 1350
+  const P = 88
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const ctx = canvas.getContext('2d')!
+  await Promise.allSettled([document.fonts?.load(`600 64px ${DISPLAY}`), document.fonts?.load(`400 32px ${TEXT}`)])
+  ctx.fillStyle = C.ink
+  ctx.fillRect(0, 0, W, H)
+  const halo = ctx.createRadialGradient(W - 140, 140, 0, W - 140, 140, 700)
+  halo.addColorStop(0, 'rgba(214,181,110,0.10)')
+  halo.addColorStop(1, 'rgba(214,181,110,0)')
+  ctx.fillStyle = halo
+  ctx.fillRect(0, 0, W, H)
+  const sigil = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(sigilSvg(C.gold, 256))}`).catch(() => null)
+  if (sigil) {
+    ctx.globalAlpha = 0.07
+    ctx.drawImage(sigil, W - 420, -60, 520, 520)
+    ctx.globalAlpha = 1
+    ctx.drawImage(sigil, P, P - 6, 56, 56)
+  }
+  ctx.fillStyle = C.gold
+  ctx.font = `600 28px ${DISPLAY}`
+  ctx.letterSpacing = '6px'
+  ctx.fillText('BILAN DE LA SEMAINE', P + 76, P + 32)
+  ctx.letterSpacing = '0px'
+
+  let y = P + 160
+  ctx.fillStyle = C.ivory
+  ctx.font = `600 60px ${DISPLAY}`
+  ctx.fillText(fit(ctx, d.title, W - 2 * P), P, y)
+
+  y += 60
+  ctx.strokeStyle = C.line
+  ctx.lineWidth = 2
+  const rule = (yy: number) => {
+    ctx.beginPath()
+    ctx.moveTo(P, yy)
+    ctx.lineTo(W - P, yy)
+    ctx.stroke()
+  }
+  rule(y)
+  const colW = (W - 2 * P) / d.stats.length
+  d.stats.forEach(([label, value], i) => {
+    const x = P + i * colW
+    ctx.fillStyle = C.silver
+    ctx.font = `600 22px ${TEXT}`
+    ctx.letterSpacing = '3px'
+    ctx.fillText(label.toUpperCase(), x, y + 56)
+    ctx.letterSpacing = '0px'
+    ctx.fillStyle = C.ivory
+    ctx.font = `600 48px ${DISPLAY}`
+    ctx.fillText(fit(ctx, value, colW - 16), x, y + 116)
+  })
+  y += 156
+  rule(y)
+
+  y += 66
+  for (const l of d.lines) {
+    ctx.font = `500 32px ${DISPLAY}`
+    const vw = ctx.measureText(l.value).width
+    ctx.fillStyle = C.gold
+    ctx.fillText(l.value, W - P - vw, y)
+    ctx.fillStyle = C.ivory
+    ctx.font = `400 32px ${TEXT}`
+    ctx.fillText(fit(ctx, l.label, W - 2 * P - vw - 32), P, y)
+    y += 58
+  }
+
+  if (d.records.length) {
+    y += 24
+    ctx.fillStyle = C.amethyst
+    ctx.font = `600 22px ${TEXT}`
+    ctx.letterSpacing = '3px'
+    ctx.fillText(`${d.records.length} RECORD${d.records.length > 1 ? 'S' : ''}`, P, y)
+    ctx.letterSpacing = '0px'
+    y += 52
+    for (const r of d.records.slice(0, 3)) {
+      ctx.font = `600 30px ${DISPLAY}`
+      const vw = ctx.measureText(r.value).width
+      ctx.fillStyle = C.gold
+      ctx.fillText(r.value, W - P - vw, y)
+      ctx.fillStyle = C.ivory
+      ctx.font = `400 30px ${TEXT}`
+      ctx.fillText(fit(ctx, r.label, W - 2 * P - vw - 32), P, y)
+      y += 50
+    }
+  }
+
+  // Point à améliorer, sur plusieurs lignes
+  y += 80
+  ctx.fillStyle = C.gold
+  ctx.font = `600 22px ${TEXT}`
+  ctx.letterSpacing = '3px'
+  ctx.fillText('SEMAINE PROCHAINE', P, y)
+  ctx.letterSpacing = '0px'
+  ctx.fillStyle = C.ivory
+  ctx.font = `400 30px ${TEXT}`
+  let line = ''
+  y += 50
+  for (const word of d.tip.split(' ')) {
+    const test = line ? `${line} ${word}` : word
+    if (ctx.measureText(test).width > W - 2 * P && line) {
+      ctx.fillText(line, P, y)
+      y += 42
+      line = word
+    } else line = test
+  }
+  if (line) ctx.fillText(line, P, y)
+
+  ctx.fillStyle = C.gold
+  ctx.fillRect(P, H - P - 2, 64, 2)
+  ctx.fillStyle = C.silver
+  ctx.font = `400 24px ${TEXT}`
+  ctx.fillText('AudujLift · Dark Solar Performance', P + 84, H - P + 6)
+  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Image impossible à créer'))), 'image/png'))
+}

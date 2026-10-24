@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { DEFAULT_EXERCISES, libraryRowToExercise, type LibraryRow } from './exercises-data'
 import { activeProfileId, dbNameFor } from './profiles'
-import type { BodyWeight, DayLog, Exercise, Food, FoodEntry, Measurement, ProgressPhoto, Routine, SavedMeal, Settings, Workout } from './types'
+import type { BodyWeight, DayLog, Exercise, Food, FoodEntry, Measurement, ProgressPhoto, Routine, SavedMeal, Settings, ShoppingItem, Workout } from './types'
 
 export const DEFAULT_SETTINGS: Settings = {
   name: '',
@@ -40,6 +40,7 @@ export class AudujLiftDB extends Dexie {
   meals!: EntityTable<SavedMeal, 'id'>
   measurements!: EntityTable<Measurement, 'id'>
   photos!: EntityTable<ProgressPhoto, 'id'>
+  shopping!: EntityTable<ShoppingItem, 'id'>
 
   constructor(name: string) {
     super(name)
@@ -59,6 +60,8 @@ export class AudujLiftDB extends Dexie {
       measurements: 'id, date',
       photos: 'id, date',
     })
+    // v3 : liste de courses
+    this.version(3).stores({ shopping: 'id, key, checked, createdAt' })
     this.on('populate', (tx) => {
       tx.table('exercises').bulkAdd(DEFAULT_EXERCISES)
     })

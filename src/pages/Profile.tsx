@@ -1,11 +1,13 @@
-import { Calculator, Download, Info, Smartphone, Upload } from 'lucide-react'
+import { Calculator, Download, Info, Smartphone, Upload, Users } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { ProfileAvatar, ProfileSwitcher } from '../components/ProfileSwitcher'
 import { Button, Card, Field, inputClass, NumberInput, Page, SectionTitle, Select, Tabs } from '../components/ui'
 import { REST_OPTIONS } from '../components/workout-parts'
 import { downloadBlob, exportBackup, importBackup } from '../lib/backup'
 import { db, saveSettings } from '../lib/db'
 import { useLatestBodyweight, useSettings } from '../lib/hooks'
 import { ACTIVITY_LABELS, GOAL_LABELS, suggestGoals } from '../lib/nutrition'
+import { activeProfile, listProfiles, renameProfile } from '../lib/profiles'
 import type { Activity, Goal, Settings } from '../lib/types'
 import { formatClock, toISODate, uid } from '../lib/utils'
 
@@ -17,10 +19,13 @@ export default function Profile() {
   const [saved, setSaved] = useState(false)
   const [suggestion, setSuggestion] = useState<ReturnType<typeof suggestGoals> | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [switcher, setSwitcher] = useState(false)
+  const profile = activeProfile()
 
   useEffect(() => {
-    setS(stored)
-  }, [stored])
+    // Un nouveau profil reprend le prénom saisi à sa création
+    setS({ ...stored, name: stored.name || (profile.name !== 'Moi' ? profile.name : '') })
+  }, [stored, profile.name])
   useEffect(() => {
     setWeight((w) => w ?? bw)
   }, [bw])
@@ -38,6 +43,7 @@ export default function Profile() {
 
   const save = async () => {
     await saveSettings({ ...s, onboarded: true })
+    if (s.name.trim()) renameProfile(profile.id, s.name)
     if (weight && weight !== bw) {
       const today = toISODate()
       const existing = await db.bodyweights.where('date').equals(today).first()
@@ -58,10 +64,22 @@ export default function Profile() {
         </Button>
       }
     >
+      <Card className="flex items-center gap-3" onClick={() => setSwitcher(true)}>
+        <ProfileAvatar profile={profile} />
+        <div className="min-w-0 flex-1">
+          <div className="text-xs text-zinc-400">Profil actif</div>
+          <div className="truncate font-bold">{s.name || profile.name}</div>
+        </div>
+        <span className="flex items-center gap-1.5 text-sm font-medium text-lime-400">
+          <Users size={18} /> {listProfiles().length > 1 ? 'Changer' : 'Ajouter un profil'}
+        </span>
+      </Card>
+      <ProfileSwitcher open={switcher} onClose={() => setSwitcher(false)} />
+
       <SectionTitle>Moi</SectionTitle>
       <Card className="space-y-3">
         <Field label="Prénom">
-          <input value={s.name} onChange={(e) => patch({ name: e.target.value })} placeholder="Aurélien" className={inputClass} />
+          <input value={s.name} onChange={(e) => patch({ name: e.target.value })} placeholder="Ton prénom" className={inputClass} />
         </Field>
         <Field label="Sexe">
           <Tabs
@@ -210,7 +228,11 @@ export default function Profile() {
             <a href="https://fr.openfoodfacts.org" target="_blank" rel="noreferrer" className="text-lime-400 underline">
               Open Food Facts
             </a>{' '}
-            (licence ODbL), la base collaborative et libre des produits alimentaires.
+            (licence ODbL), la base collaborative et libre des produits alimentaires. Aliments génériques issus de la{' '}
+            <a href="https://ciqual.anses.fr" target="_blank" rel="noreferrer" className="text-lime-400 underline">
+              table Ciqual 2025
+            </a>{' '}
+            de l'ANSES (licence CC-BY 4.0).
           </span>
         </p>
       </Card>

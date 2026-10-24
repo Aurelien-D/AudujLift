@@ -108,7 +108,7 @@ export interface Nutrients {
 
 export interface Food {
   id: string
-  source: 'off' | 'custom'
+  source: 'off' | 'custom' | 'ciqual'
   barcode?: string
   name: string
   brand?: string

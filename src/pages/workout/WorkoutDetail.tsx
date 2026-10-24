@@ -1,15 +1,27 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Clock, Dumbbell, Flame, Pencil, Repeat, Save, Trash2, Trophy } from 'lucide-react'
+import { Clock, Flame, Loader2, Pencil, Repeat, Save, Share2, Trash2, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { ExerciseThumb } from '../../components/ExercisePicker'
+import { SolarSigil } from '../../components/SolarSigil'
 import { Button, Card, IconButton, NumberInput, Page, Stat } from '../../components/ui'
 import { columnsFor, formatSet, readCol, setLabels, writeCol } from '../../components/workout-parts'
 import { db } from '../../lib/db'
 import { useDoneWorkouts, useExerciseMap, useSettings } from '../../lib/hooks'
-import { detectPRs, weeklyStreak, workoutTotals } from '../../lib/stats'
-import type { Workout } from '../../lib/types'
+import { renderRecap, shareRecap } from '../../lib/recap'
+import { detectPRs, e1rm, weeklyStreak, workoutTotals } from '../../lib/stats'
+import type { Exercise, Workout, WorkoutSet } from '../../lib/types'
 import { cn, formatDate, formatDuration, formatNumber, formatTime, uid } from '../../lib/utils'
 import { SET_TYPE_LABELS, workoutToRoutineExercises } from '../../lib/workout'
+
+/** Meilleure série d'un exercice (1RM estimé le plus haut, sinon la plus longue / la plus lointaine). */
+function bestSet(sets: WorkoutSet[], kind: Exercise['kind']): WorkoutSet | undefined {
+  const work = sets.filter((s) => s.type !== 'warmup')
+  const list = work.length ? work : sets
+  const score = (s: WorkoutSet) =>
+    kind === 'cardio' ? (s.distance ?? 0) * 1000 + (s.duration ?? 0) : kind === 'duration' ? (s.duration ?? 0) : e1rm(s.weight || 1, s.reps ?? 0) + (s.reps ?? 0) / 1000
+  return list.reduce<WorkoutSet | undefined>((best, s) => (!best || score(s) > score(best) ? s : best), undefined)
+}
 
 export default function WorkoutDetail() {
   const { id } = useParams()
@@ -23,6 +35,7 @@ export default function WorkoutDetail() {
   const routine = useLiveQuery(() => (workout?.routineId ? db.routines.get(workout.routineId) : undefined), [workout?.routineId])
   const [edit, setEdit] = useState<Workout | null>(null)
   const [routineSaved, setRoutineSaved] = useState(false)
+  const [sharing, setSharing] = useState(false)
 
   const prs = useMemo(() => (workout && all ? detectPRs(workout, all, exMap, workout.bodyweight) : []), [workout, all, exMap])
   const streak = useMemo(
@@ -65,6 +78,27 @@ export default function WorkoutDetail() {
     }
     setRoutineSaved(true)
   }
+  const share = async () => {
+    setSharing(true)
+    try {
+      const blob = await renderRecap({
+        name: workout.name,
+        startedAt: workout.startedAt,
+        totals: workoutTotals(workout, exMap),
+        exercises: workout.exercises.map((we) => {
+          const kind = exMap.get(we.exerciseId)?.kind ?? 'weight_reps'
+          const b = bestSet(we.sets, kind)
+          return { name: exMap.get(we.exerciseId)?.name ?? 'Exercice', best: b ? formatSet(b, kind) : '' }
+        }),
+        records: prs.map((p) => ({ ...p, exercise: exMap.get(p.exerciseId)?.name ?? '' })),
+      })
+      await shareRecap(blob, `audujlift-${new Date(workout.startedAt).toISOString().slice(0, 10)}.png`, workout.name)
+    } catch (e) {
+      alert(`Partage impossible : ${(e as Error).message}`)
+    } finally {
+      setSharing(false)
+    }
+  }
   const saveEdit = async () => {
     if (edit) await db.workouts.put(edit)
     setEdit(null)
@@ -88,27 +122,37 @@ export default function WorkoutDetail() {
       }
     >
       {summary && (
-        <div className="animate-pop mb-4 rounded-3xl bg-gradient-accent p-5 text-zinc-950">
-          <div className="text-4xl">🎉</div>
-          <h2 className="mt-1 text-2xl font-black">Bravo{settings.name ? ` ${settings.name}` : ''} !</h2>
-          <p className="text-sm font-medium opacity-80">
+        <Card glow className="animate-rise relative mb-4 overflow-hidden p-5">
+          <SolarSigil size={150} className="animate-sun pointer-events-none absolute -top-10 -right-10 text-gold/[0.08]" />
+          <SolarSigil size={36} className="animate-sun text-gold" />
+          <h2 className="mt-3 text-2xl font-semibold">Bravo{settings.name ? ` ${settings.name}` : ''}.</h2>
+          <p className="mt-1 text-sm text-silver">
             C'est ta {number}
             <sup>{number === 1 ? 're' : 'e'}</sup> séance
-            {streak > 0 && ` · série de ${streak} semaine${streak > 1 ? 's' : ''} 🔥`}
+            {streak > 0 && (
+              <>
+                {' '}
+                ·{' '}
+                <span className="text-gold">
+                  {streak} semaine{streak > 1 ? 's' : ''}
+                </span>{' '}
+                d'affilée à l'objectif
+              </>
+            )}
           </p>
-        </div>
+        </Card>
       )}
 
       {edit ? (
         <input
           value={edit.name}
           onChange={(e) => setEdit({ ...edit, name: e.target.value })}
-          className="mb-2 w-full rounded-lg bg-zinc-900 px-2 py-1 text-xl font-bold outline-none"
+          className="font-display mb-2 w-full rounded-lg bg-surface px-2 py-1 text-xl font-semibold outline-none"
         />
       ) : (
-        summary && <h2 className="text-xl font-bold">{w.name}</h2>
+        summary && <h2 className="text-xl font-semibold">{w.name}</h2>
       )}
-      <p className="text-sm text-zinc-400">
+      <p className="text-sm text-silver">
         {formatDate(w.startedAt)} · {formatTime(w.startedAt)}
       </p>
 
@@ -119,33 +163,45 @@ export default function WorkoutDetail() {
       </Card>
 
       {prs.length > 0 && (
-        <Card className="mt-3 border-amber-400/30 bg-amber-400/5">
-          <div className="mb-2 flex items-center gap-2 font-bold text-amber-300">
-            <Trophy size={18} /> {prs.length} record{prs.length > 1 ? 's' : ''} personnel{prs.length > 1 ? 's' : ''} !
+        <div className={cn('mt-3 rounded-[18px] border border-amethyst/50 bg-surface p-4', summary && 'animate-record')}>
+          <div className="mb-3 flex items-center gap-2">
+            <Trophy size={18} className="text-amethyst-light" />
+            <span className="font-display font-semibold text-ivory">
+              {prs.length} record{prs.length > 1 ? 's' : ''} personnel{prs.length > 1 ? 's' : ''}
+            </span>
           </div>
-          <ul className="space-y-1 text-sm">
+          <ul className="space-y-2.5 text-sm">
             {prs.map((p, i) => (
-              <li key={i} className="flex justify-between gap-2">
-                <span className="truncate text-zinc-300">
-                  {exMap.get(p.exerciseId)?.name} — {p.label}
+              <li key={i} className="flex items-center justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block truncate text-ivory">{exMap.get(p.exerciseId)?.name}</span>
+                  <span className="text-xs text-silver">{p.label}</span>
                 </span>
-                <span className="shrink-0 font-semibold text-amber-200">{p.value}</span>
+                <span className="shrink-0 text-right">
+                  {p.previous && <span className="mr-1.5 text-xs text-silver line-through decoration-silver-dim">{p.previous}</span>}
+                  <span className="font-display font-semibold text-gold">{p.value}</span>
+                </span>
               </li>
             ))}
           </ul>
-        </Card>
+        </div>
       )}
 
       {summary && (
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={saveAsRoutine} disabled={routineSaved}>
-            {routine ? <Repeat size={18} /> : <Save size={18} />}
-            {routineSaved ? 'Enregistré ✓' : routine ? 'Mettre à jour la routine' : 'Créer une routine'}
+        <>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Button variant="secondary" onClick={saveAsRoutine} disabled={routineSaved}>
+              {routine ? <Repeat size={18} /> : <Save size={18} />}
+              {routineSaved ? 'Enregistré ✓' : routine ? 'Mettre à jour la routine' : 'Créer une routine'}
+            </Button>
+            <Button variant="primary" onClick={() => navigate('/')}>
+              Terminer
+            </Button>
+          </div>
+          <Button variant="tertiary" className="mt-1 w-full" onClick={share} disabled={sharing}>
+            {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Partager le récap
           </Button>
-          <Button variant="primary" onClick={() => navigate('/')}>
-            Terminer
-          </Button>
-        </div>
+        </>
       )}
 
       <div className="mt-4 space-y-3">
@@ -155,14 +211,15 @@ export default function WorkoutDetail() {
           const labels = setLabels(we.sets.map((s) => s.type))
           return (
             <Card key={we.uid} className="p-3">
-              <button onClick={() => navigate(`/exercises/${we.exerciseId}`)} className="flex items-center gap-2 text-left font-semibold text-lime-300">
-                <Dumbbell size={16} /> {ex?.name ?? 'Exercice supprimé'}
+              <button onClick={() => navigate(`/exercises/${we.exerciseId}`)} className="flex items-center gap-3 text-left">
+                {ex && <ExerciseThumb exercise={ex} />}
+                <span className="font-display font-semibold text-ivory">{ex?.name ?? 'Exercice supprimé'}</span>
               </button>
-              {we.notes && <p className="mt-1 text-sm text-amber-200/80">{we.notes}</p>}
+              {we.notes && <p className="mt-1 text-sm text-gold-pale/80">{we.notes}</p>}
               <div className="mt-2 space-y-1">
                 {we.sets.map((s, si) => (
                   <div key={si} className="flex items-center gap-3 text-sm">
-                    <span className={cn('w-6 text-center font-bold', SET_TYPE_LABELS[s.type].color)}>{labels[si]}</span>
+                    <span className={cn('w-6 text-center font-semibold', SET_TYPE_LABELS[s.type].color)}>{labels[si]}</span>
                     {edit ? (
                       columnsFor(kind).map((col) => (
                         <NumberInput
@@ -179,7 +236,10 @@ export default function WorkoutDetail() {
                         />
                       ))
                     ) : (
-                      <span className="text-zinc-200">{formatSet(s, kind)}</span>
+                      <span className="text-ivory">
+                        {formatSet(s, kind)}
+                        {s.rpe != null && <span className="ml-2 text-xs text-gold">@{s.rpe}</span>}
+                      </span>
                     )}
                   </div>
                 ))}
@@ -194,13 +254,18 @@ export default function WorkoutDetail() {
           value={edit.notes ?? ''}
           onChange={(e) => setEdit({ ...edit, notes: e.target.value })}
           placeholder="Notes de séance"
-          className="mt-3 w-full rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-sm outline-none"
+          className="mt-3 w-full rounded-xl border border-line bg-ink p-3 text-sm outline-none"
         />
       )}
-      {!edit && w.notes && <p className="mt-3 text-sm text-zinc-400">{w.notes}</p>}
+      {!edit && w.notes && <p className="mt-3 text-sm text-silver">{w.notes}</p>}
 
+      {!summary && !edit && (
+        <Button variant="tertiary" className="mt-4 w-full" onClick={share} disabled={sharing}>
+          {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Partager le récap
+        </Button>
+      )}
       {!summary && (
-        <div className="mt-6 grid grid-cols-2 gap-2">
+        <div className="mt-2 grid grid-cols-2 gap-2">
           <Button variant="secondary" onClick={saveAsRoutine} disabled={routineSaved}>
             <Save size={18} /> {routineSaved ? 'Enregistré ✓' : 'Créer une routine'}
           </Button>
@@ -210,7 +275,7 @@ export default function WorkoutDetail() {
         </div>
       )}
       {summary && (
-        <p className="mt-6 flex items-center justify-center gap-1 text-xs text-zinc-400">
+        <p className="mt-6 flex items-center justify-center gap-1 text-xs text-silver">
           <Clock size={12} /> Repos bien mérité · <Flame size={12} /> pense à tes protéines
         </p>
       )}

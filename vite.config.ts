@@ -17,10 +17,10 @@ export default defineConfig({
       manifest: {
         name: 'AudujLift',
         short_name: 'AudujLift',
-        description: 'Suivi musculation & nutrition',
+        description: 'Dark Solar Performance — musculation & nutrition',
         lang: 'fr',
-        theme_color: '#09090b',
-        background_color: '#09090b',
+        theme_color: '#0B0D12',
+        background_color: '#0B0D12',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '.',

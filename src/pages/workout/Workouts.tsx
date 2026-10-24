@@ -7,6 +7,7 @@ import { db } from '../../lib/db'
 import { useActiveWorkout, useExerciseMap } from '../../lib/hooks'
 import type { Routine } from '../../lib/types'
 import { formatShortDate, uid } from '../../lib/utils'
+import { estimateDurationMin } from '../../lib/progression'
 import { startWorkout } from '../../lib/workout'
 
 export function useStartWorkout() {
@@ -77,9 +78,9 @@ export default function Workouts() {
           <button
             key={to}
             onClick={() => navigate(to)}
-            className="flex flex-col items-center gap-1.5 rounded-2xl border border-zinc-800 bg-zinc-900/70 py-3 text-xs font-medium text-zinc-300 active:bg-zinc-800"
+            className="press flex flex-col items-center gap-1.5 rounded-2xl border border-line/70 bg-surface py-3 text-xs font-medium text-ivory-dim active:bg-raised"
           >
-            <Icon size={20} className="text-lime-400" />
+            <Icon size={20} strokeWidth={1.75} className="text-gold" />
             {label}
           </button>
         ))}
@@ -87,7 +88,7 @@ export default function Workouts() {
 
       {routines?.length === 0 && (
         <div className="mt-6">
-          <EmptyState icon={<Dumbbell size={40} />} title="Aucune routine pour l'instant">
+          <EmptyState title="Aucune routine pour l'instant">
             Crée ta propre routine ou importe un programme tout prêt (PPL, Haut/Bas, Full Body).
             <div className="mt-4 flex justify-center gap-2">
               <Button variant="outline" size="sm" onClick={() => navigate('/workouts/programs')}>
@@ -104,17 +105,17 @@ export default function Workouts() {
       {[...folders.entries()].map(([folder, list]) => (
         <div key={folder}>
           <SectionTitle>
-            {folder} <span className="text-zinc-400">({list.length})</span>
+            {folder} <span className="text-silver-dim">({list.length})</span>
           </SectionTitle>
           <div className="space-y-3">
             {list.map((r) => (
               <Card key={r.id}>
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1" onClick={() => navigate(`/workouts/routine/${r.id}`)}>
-                    <h3 className="truncate text-base font-bold">{r.name}</h3>
-                    <p className="mt-0.5 line-clamp-2 text-sm text-zinc-400">{r.exercises.map((e) => exMap.get(e.exerciseId)?.name ?? '?').join(', ') || 'Aucun exercice'}</p>
-                    <p className="mt-1 text-xs text-zinc-400">
-                      {r.exercises.length} exercices · {r.exercises.reduce((n, e) => n + e.sets.length, 0)} séries
+                    <h3 className="truncate text-base font-semibold">{r.name}</h3>
+                    <p className="mt-0.5 line-clamp-2 text-sm text-silver">{r.exercises.map((e) => exMap.get(e.exerciseId)?.name ?? '?').join(', ') || 'Aucun exercice'}</p>
+                    <p className="mt-1 text-xs text-silver">
+                      {r.exercises.length} exercices · {r.exercises.reduce((n, e) => n + e.sets.length, 0)} séries · ~{estimateDurationMin(r.exercises)} min
                       {r.lastUsedAt && ` · dernière fois le ${formatShortDate(r.lastUsedAt)}`}
                     </p>
                   </div>
@@ -123,7 +124,7 @@ export default function Workouts() {
                   </IconButton>
                 </div>
                 <Button variant="secondary" className="mt-3 w-full" onClick={() => start(r)}>
-                  <Play size={18} className="text-lime-400" /> Démarrer
+                  <Play size={18} className="text-gold" /> Démarrer
                 </Button>
               </Card>
             ))}

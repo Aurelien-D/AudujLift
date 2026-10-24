@@ -24,12 +24,12 @@ function PhotoSlot({ label, value, onChange, hint }: { label: string; value?: st
   const input = useRef<HTMLInputElement>(null)
   return (
     <div>
-      <div className="mb-1 text-xs font-medium text-zinc-400">{label}</div>
+      <div className="mb-1 text-xs font-medium text-silver">{label}</div>
       <div
         onClick={() => !value && input.current?.click()}
         className={cn(
           'relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-dashed',
-          value ? 'border-transparent' : 'border-zinc-700 bg-zinc-900 active:bg-zinc-800',
+          value ? 'border-transparent' : 'border-line bg-surface active:bg-raised',
         )}
       >
         {value ? (
@@ -40,8 +40,8 @@ function PhotoSlot({ label, value, onChange, hint }: { label: string; value?: st
             </button>
           </>
         ) : (
-          <div className="flex flex-col items-center gap-1 px-2 text-center text-xs text-zinc-400">
-            <Camera size={26} className="text-lime-400" />
+          <div className="flex flex-col items-center gap-1 px-2 text-center text-xs text-silver">
+            <Camera size={26} className="text-gold" />
             {hint}
           </div>
         )}
@@ -185,16 +185,16 @@ export default function FoodEditor() {
             </>
           ) : (
             <>
-              <ScanText size={18} className="text-lime-400" /> Lire les valeurs sur la photo
+              <ScanText size={18} className="text-gold" /> Lire les valeurs sur la photo
             </>
           )}
         </Button>
       )}
-      {ocrMsg && <p className="mt-2 text-sm text-zinc-300">{ocrMsg}</p>}
+      {ocrMsg && <p className="mt-2 text-sm text-ivory-dim">{ocrMsg}</p>}
       {ocrText && (
-        <details className="mt-2 text-xs text-zinc-400">
+        <details className="mt-2 text-xs text-silver">
           <summary className="cursor-pointer">Texte reconnu</summary>
-          <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-zinc-950 p-2 whitespace-pre-wrap">{ocrText}</pre>
+          <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-ink p-2 whitespace-pre-wrap">{ocrText}</pre>
         </details>
       )}
 
@@ -242,26 +242,26 @@ export default function FoodEditor() {
               />
             </div>
           ) : (
-            <span className="text-xs text-zinc-400">pour 100 {food.unit}</span>
+            <span className="text-xs text-silver">pour 100 {food.unit}</span>
           )}
         </div>
         <div className="space-y-2">
           {FIELDS.map((f) => (
             <div key={f.key} className="flex items-center gap-3">
-              <span className={cn('flex-1 text-sm', f.indent ? 'pl-4 text-zinc-400' : 'font-medium')}>{f.label}</span>
+              <span className={cn('flex-1 text-sm', f.indent ? 'pl-4 text-silver' : 'font-medium')}>{f.label}</span>
               <div className="w-28 shrink-0">
                 <NumberInput
                   value={getVal(f.key)}
                   onChange={(v) => setVal(f.key, v)}
                   placeholder={f.key === 'kcal' && computedKcal ? String(computedKcal) : '0'}
-                  className={cn('py-2 text-right', filled.has(f.key) && ocrMsg && 'border-lime-400/50')}
+                  className={cn('py-2 text-right', filled.has(f.key) && ocrMsg && 'border-gold/50')}
                 />
               </div>
             </div>
           ))}
         </div>
         {food.per100.kcal > 0 && computedKcal > 0 && Math.abs(computedKcal - food.per100.kcal) / food.per100.kcal > 0.2 && (
-          <p className="mt-3 text-xs text-amber-400">
+          <p className="mt-3 text-xs text-warn">
             Attention : les macros donnent ~{computedKcal} kcal/100 {food.unit}, ce qui ne colle pas avec l'énergie saisie. Vérifie les valeurs.
           </p>
         )}

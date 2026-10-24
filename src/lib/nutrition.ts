@@ -1,4 +1,4 @@
-import type { Activity, Food, Goal, Meal, Nutrients, Sex } from './types'
+import type { Activity, Food, Goal, Meal, Nutrients, Settings, Sex } from './types'
 
 export const MEAL_LABELS: Record<Meal, string> = {
   breakfast: 'Petit-déjeuner',
@@ -82,5 +82,16 @@ export function sumNutrients(list: Nutrients[]): Nutrients {
 export const kcalFromMacros = (n: Pick<Nutrients, 'protein' | 'carbs' | 'fat'>) => n.protein * 4 + n.carbs * 4 + n.fat * 9
 
 export function defaultQuantity(food: Food): number {
-  return food.servingSize ?? 100
+  return food.lastQuantity ?? food.servingSize ?? 100
+}
+
+/** Objectifs du jour : objectifs principaux les jours d'entraînement, objectifs « repos » sinon (si activés). */
+export function goalsForDay(settings: Pick<Settings, 'goals' | 'splitGoals' | 'restGoals'>, training: boolean): MacroGoals {
+  const { kcal, protein, carbs, fat } = settings.splitGoals && !training ? settings.restGoals : settings.goals
+  return { kcal, protein, carbs, fat }
+}
+
+/** Répartit des calories en gardant protéines et lipides, le reste en glucides. */
+export function rebalanceGoals(goals: MacroGoals, kcal: number): MacroGoals {
+  return { kcal, protein: goals.protein, fat: goals.fat, carbs: Math.max(0, Math.round((kcal - goals.protein * 4 - goals.fat * 9) / 4)) }
 }

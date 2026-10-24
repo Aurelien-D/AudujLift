@@ -118,6 +118,8 @@ export interface PRHit {
   exerciseId: string
   label: string
   value: string
+  /** Ancien record battu */
+  previous?: string
 }
 
 /** Records battus dans une séance par rapport à toutes les séances précédentes. */
@@ -133,9 +135,13 @@ export function detectPRs(workout: Workout, previous: Workout[], exercises: Map<
     const now = exerciseHistory(ex, [done], bw)[0]
     if (!now) continue
     const prev = personalRecords(prevHist)
-    if (now.bestE1rm > (prev.bestE1rm?.value ?? 0) + 0.01) hits.push({ exerciseId: exId, label: '1RM estimé', value: `${formatNumber(now.bestE1rm)} kg` })
-    if (ex.kind === 'weight_reps' && now.maxWeight > (prev.maxWeight?.value ?? 0)) hits.push({ exerciseId: exId, label: 'Charge max', value: `${formatNumber(now.maxWeight)} kg` })
-    if (now.volume > (prev.bestVolumeSession?.value ?? 0) + 0.01) hits.push({ exerciseId: exId, label: 'Volume', value: `${formatNumber(now.volume, 0)} kg` })
+    const kg = (v: number | undefined, d = 1) => (v ? `${formatNumber(v, d)} kg` : undefined)
+    if (now.bestE1rm > (prev.bestE1rm?.value ?? 0) + 0.01)
+      hits.push({ exerciseId: exId, label: '1RM estimé', value: `${formatNumber(now.bestE1rm)} kg`, previous: kg(prev.bestE1rm?.value) })
+    if (ex.kind === 'weight_reps' && now.maxWeight > (prev.maxWeight?.value ?? 0))
+      hits.push({ exerciseId: exId, label: 'Charge max', value: `${formatNumber(now.maxWeight)} kg`, previous: kg(prev.maxWeight?.value) })
+    if (now.volume > (prev.bestVolumeSession?.value ?? 0) + 0.01)
+      hits.push({ exerciseId: exId, label: 'Volume', value: `${formatNumber(now.volume, 0)} kg`, previous: kg(prev.bestVolumeSession?.value, 0) })
   }
   return hits
 }
@@ -150,15 +156,15 @@ export interface Rank {
 }
 
 export const RANKS: Rank[] = [
-  { key: 'fer', name: 'Fer', color: '#71717a', min: 0 },
-  { key: 'bronze', name: 'Bronze', color: '#c2773b', min: 0.4 },
-  { key: 'argent', name: 'Argent', color: '#cbd5e1', min: 0.6 },
-  { key: 'or', name: 'Or', color: '#facc15', min: 0.8 },
-  { key: 'platine', name: 'Platine', color: '#5eead4', min: 1.0 },
-  { key: 'diamant', name: 'Diamant', color: '#60a5fa', min: 1.25 },
-  { key: 'champion', name: 'Champion', color: '#c084fc', min: 1.5 },
-  { key: 'titan', name: 'Titan', color: '#f43f5e', min: 1.75 },
-  { key: 'legende', name: 'Légende', color: '#a3e635', min: 2.0 },
+  { key: 'fer', name: 'Fer', color: '#7D828E', min: 0 },
+  { key: 'bronze', name: 'Bronze', color: '#B07A4F', min: 0.4 },
+  { key: 'argent', name: 'Argent', color: '#C9CDD6', min: 0.6 },
+  { key: 'or', name: 'Or', color: '#D6B56E', min: 0.8 },
+  { key: 'platine', name: 'Platine', color: '#9FC7C2', min: 1.0 },
+  { key: 'diamant', name: 'Diamant', color: '#8FB2E0', min: 1.25 },
+  { key: 'champion', name: 'Champion', color: '#A58AD0', min: 1.5 },
+  { key: 'titan', name: 'Titan', color: '#D9776C', min: 1.75 },
+  { key: 'legende', name: 'Légende', color: '#E8D3A1', min: 2.0 },
 ]
 
 export interface RankResult {
@@ -221,4 +227,21 @@ export function platesPerSide(target: number, bar: number, plates: number[]): { 
     }
   }
   return { plates: out, remainder: Math.round(side * 2 * 100) / 100 }
+}
+
+// ---------- Tableau de bord ----------
+
+/** Records battus depuis `since`, du plus récent au plus ancien. */
+export function recentPRs(workouts: Workout[], exercises: Map<string, Exercise>, since: number): { hit: PRHit; date: number; workoutId: string }[] {
+  const out: { hit: PRHit; date: number; workoutId: string }[] = []
+  for (const w of workouts) {
+    if (w.status !== 'done' || w.startedAt < since) continue
+    for (const hit of detectPRs(w, workouts, exercises, w.bodyweight)) out.push({ hit, date: w.startedAt, workoutId: w.id })
+  }
+  return out.sort((a, b) => b.date - a.date)
+}
+
+/** Volume (kg) des séances comprises dans [from, to[. */
+export function volumeBetween(workouts: Workout[], exercises: Map<string, Exercise>, from: number, to: number): number {
+  return workouts.filter((w) => w.status === 'done' && w.startedAt >= from && w.startedAt < to).reduce((v, w) => v + workoutTotals(w, exercises).volume, 0)
 }

@@ -1,7 +1,7 @@
 import { Calculator, Download, Info, Smartphone, Upload, Users } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { ProfileAvatar, ProfileSwitcher } from '../components/ProfileSwitcher'
-import { Button, Card, Field, inputClass, NumberInput, Page, SectionTitle, Select, Tabs } from '../components/ui'
+import { Button, Card, Field, inputClass, NumberInput, Page, SectionTitle, Select, Tabs, Toggle } from '../components/ui'
 import { REST_OPTIONS } from '../components/workout-parts'
 import { downloadBlob, exportBackup, importBackup } from '../lib/backup'
 import { db, saveSettings } from '../lib/db'
@@ -9,7 +9,7 @@ import { useLatestBodyweight, useSettings } from '../lib/hooks'
 import { ACTIVITY_LABELS, GOAL_LABELS, suggestGoals } from '../lib/nutrition'
 import { activeProfile, listProfiles, renameProfile } from '../lib/profiles'
 import type { Activity, Goal, Settings } from '../lib/types'
-import { formatClock, toISODate, uid } from '../lib/utils'
+import { formatClock, formatShortDate, toISODate, uid } from '../lib/utils'
 
 export default function Profile() {
   const stored = useSettings()
@@ -35,6 +35,7 @@ export default function Profile() {
     setSaved(false)
   }
   const patchGoals = (p: Partial<Settings['goals']>) => patch({ goals: { ...s.goals, ...p } })
+  const patchRest = (p: Partial<Settings['restGoals']>) => patch({ restGoals: { ...s.restGoals, ...p } })
 
   const compute = () => {
     if (!weight) return alert('Renseigne ton poids pour calculer tes besoins.')
@@ -42,7 +43,9 @@ export default function Profile() {
   }
 
   const save = async () => {
-    await saveSettings({ ...s, onboarded: true })
+    // Ces deux champs sont gérés ailleurs (export, suggestion de calories) : on ne les écrase pas
+    const { lastBackupAt: _b, tdeeSnoozeUntil: _t, ...edited } = s
+    await saveSettings({ ...edited, onboarded: true })
     if (s.name.trim()) renameProfile(profile.id, s.name)
     if (weight && weight !== bw) {
       const today = toISODate()
@@ -67,10 +70,10 @@ export default function Profile() {
       <Card className="flex items-center gap-3" onClick={() => setSwitcher(true)}>
         <ProfileAvatar profile={profile} />
         <div className="min-w-0 flex-1">
-          <div className="text-xs text-zinc-400">Profil actif</div>
+          <div className="text-xs text-silver">Profil actif</div>
           <div className="truncate font-bold">{s.name || profile.name}</div>
         </div>
-        <span className="flex items-center gap-1.5 text-sm font-medium text-lime-400">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-gold">
           <Users size={18} /> {listProfiles().length > 1 ? 'Changer' : 'Ajouter un profil'}
         </span>
       </Card>
@@ -113,14 +116,14 @@ export default function Profile() {
           <Select value={s.goal} onChange={(goal) => patch({ goal })} options={Object.entries(GOAL_LABELS).map(([value, g]) => ({ value: value as Goal, label: g.label }))} />
         </Field>
         <Button variant="outline" className="w-full" onClick={compute}>
-          <Calculator size={18} className="text-lime-400" /> Calculer mes besoins
+          <Calculator size={18} className="text-gold" /> Calculer mes besoins
         </Button>
         {suggestion && (
-          <div className="animate-pop rounded-xl bg-lime-400/10 p-3 text-sm">
-            <p className="text-zinc-300">
+          <div className="animate-pop rounded-xl bg-gold/10 p-3 text-sm">
+            <p className="text-ivory-dim">
               Métabolisme de base : <b>{suggestion.bmr} kcal</b> · Dépense journalière : <b>{suggestion.tdee} kcal</b>
             </p>
-            <p className="mt-1 font-semibold text-lime-300">
+            <p className="mt-1 font-semibold text-gold-pale">
               Proposition : {suggestion.kcal} kcal · P {suggestion.protein} g · G {suggestion.carbs} g · L {suggestion.fat} g
             </p>
             <Button
@@ -140,6 +143,12 @@ export default function Profile() {
 
       <SectionTitle>Objectifs nutrition (par jour)</SectionTitle>
       <Card className="space-y-3">
+        <Toggle
+          checked={s.splitGoals}
+          onChange={(splitGoals) => patch({ splitGoals })}
+          label="Objectifs différents les jours de repos"
+          hint="Les objectifs ci-dessous valent alors pour les jours d'entraînement."
+        />
         <div className="grid grid-cols-2 gap-2">
           <Field label="Calories (kcal)" hint={macroKcal && Math.abs(macroKcal - s.goals.kcal) > 50 ? `Les macros font ${Math.round(macroKcal)} kcal` : undefined}>
             <NumberInput value={s.goals.kcal} onChange={(v) => patchGoals({ kcal: v ?? 0 })} decimals={false} />
@@ -159,6 +168,35 @@ export default function Profile() {
             <NumberInput value={s.goals.fat} onChange={(v) => patchGoals({ fat: v ?? 0 })} decimals={false} />
           </Field>
         </div>
+        {s.splitGoals && (
+          <div className="animate-fade space-y-2 border-t border-line/60 pt-3">
+            <div className="label">Jours de repos</div>
+            <div className="grid grid-cols-4 gap-2">
+              <Field label="Kcal">
+                <NumberInput value={s.restGoals.kcal} onChange={(v) => patchRest({ kcal: v ?? 0 })} decimals={false} />
+              </Field>
+              <Field label="Prot.">
+                <NumberInput value={s.restGoals.protein} onChange={(v) => patchRest({ protein: v ?? 0 })} decimals={false} />
+              </Field>
+              <Field label="Gluc.">
+                <NumberInput value={s.restGoals.carbs} onChange={(v) => patchRest({ carbs: v ?? 0 })} decimals={false} />
+              </Field>
+              <Field label="Lip.">
+                <NumberInput value={s.restGoals.fat} onChange={(v) => patchRest({ fat: v ?? 0 })} decimals={false} />
+              </Field>
+            </div>
+            <Button
+              variant="tertiary"
+              size="sm"
+              onClick={() => {
+                const kcal = Math.round((s.goals.kcal * 0.85) / 10) * 10
+                patchRest({ kcal, protein: s.goals.protein, fat: s.goals.fat, carbs: Math.max(0, Math.round((kcal - s.goals.protein * 4 - s.goals.fat * 9) / 4)) })
+              }}
+            >
+              Proposer : −15 % sur les glucides
+            </Button>
+          </div>
+        )}
       </Card>
 
       <SectionTitle>Entraînement</SectionTitle>
@@ -178,15 +216,37 @@ export default function Profile() {
         <Field label="Poids de la barre (kg)">
           <NumberInput value={s.barWeight} onChange={(v) => patch({ barWeight: v ?? 20 })} />
         </Field>
+        <div className="divide-y divide-line/50 border-t border-line/60 pt-1">
+          <Toggle
+            checked={s.autoProgression}
+            onChange={(autoProgression) => patch({ autoProgression })}
+            label="Progression automatique"
+            hint="+2,5 kg quand toutes les reps visées ont été réussies."
+          />
+          <Toggle checked={s.askRpe} onChange={(askRpe) => patch({ askRpe })} label="Noter l'effort (RPE)" hint="Propose une note de 6 à 10 après chaque série (facultatif)." />
+          <Toggle
+            checked={s.keepAwake}
+            onChange={(keepAwake) => patch({ keepAwake })}
+            label="Écran toujours allumé en séance"
+            hint="Évite de déverrouiller le téléphone entre les séries."
+          />
+        </div>
       </Card>
 
       <SectionTitle>Mes données</SectionTitle>
       <Card className="space-y-2">
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-silver">
           Tes données restent sur cet appareil (aucun compte, aucun serveur). Pense à faire une sauvegarde de temps en temps, ou pour passer sur un autre téléphone.
         </p>
+        <p className="text-xs text-silver-dim">{stored.lastBackupAt ? `Dernière sauvegarde : ${formatShortDate(stored.lastBackupAt)}` : 'Aucune sauvegarde pour le moment.'}</p>
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={async () => downloadBlob(await exportBackup(), `audujlift-${toISODate()}.json`)}>
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              downloadBlob(await exportBackup(), `audujlift-${toISODate()}.json`)
+              await saveSettings({ lastBackupAt: Date.now() })
+            }}
+          >
             <Download size={18} /> Exporter
           </Button>
           <Button variant="secondary" onClick={() => fileRef.current?.click()}>
@@ -213,27 +273,27 @@ export default function Profile() {
       </Card>
 
       <SectionTitle>À propos</SectionTitle>
-      <Card className="space-y-3 text-sm text-zinc-400">
+      <Card className="space-y-3 text-sm text-silver">
         <p className="flex gap-2">
-          <Smartphone size={18} className="shrink-0 text-lime-400" />
+          <Smartphone size={18} className="shrink-0 text-gold" />
           <span>
             Installe AudujLift sur ton écran d'accueil : sur iPhone, <b>Partager → Sur l'écran d'accueil</b> ; sur Android, menu <b>⋮ → Installer l'application</b>. Elle fonctionne
             aussi hors connexion.
           </span>
         </p>
         <p className="flex gap-2">
-          <Info size={18} className="shrink-0 text-lime-400" />
+          <Info size={18} className="shrink-0 text-gold" />
           <span>
             Données alimentaires fournies par{' '}
-            <a href="https://fr.openfoodfacts.org" target="_blank" rel="noreferrer" className="text-lime-400 underline">
+            <a href="https://fr.openfoodfacts.org" target="_blank" rel="noreferrer" className="text-gold underline">
               Open Food Facts
             </a>{' '}
             (licence ODbL), la base collaborative et libre des produits alimentaires. Aliments génériques issus de la{' '}
-            <a href="https://ciqual.anses.fr" target="_blank" rel="noreferrer" className="text-lime-400 underline">
+            <a href="https://ciqual.anses.fr" target="_blank" rel="noreferrer" className="text-gold underline">
               table Ciqual 2025
             </a>{' '}
             de l'ANSES (licence CC-BY 4.0). Exercices, photos et consignes :{' '}
-            <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noreferrer" className="text-lime-400 underline">
+            <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noreferrer" className="text-gold underline">
               Free Exercise DB
             </a>{' '}
             (domaine public).

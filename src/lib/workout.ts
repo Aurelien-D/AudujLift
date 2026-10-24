@@ -1,13 +1,14 @@
 import { db, getSettings } from './db'
+import { progressedWeight } from './progression'
 import { exerciseHistory } from './stats'
 import type { Exercise, Routine, RoutineExercise, SetData, Workout, WorkoutExercise, WorkoutSet } from './types'
 import { uid } from './utils'
 
 export const SET_TYPE_LABELS: Record<SetData['type'], { short: string; label: string; color: string }> = {
-  warmup: { short: 'É', label: 'Échauffement', color: 'text-amber-400' },
-  normal: { short: '', label: 'Normale', color: 'text-zinc-300' },
-  drop: { short: 'D', label: 'Dégressive (drop set)', color: 'text-violet-400' },
-  failure: { short: 'F', label: "Jusqu'à l'échec", color: 'text-rose-400' },
+  warmup: { short: 'É', label: 'Échauffement', color: 'text-warn' },
+  normal: { short: '', label: 'Normale', color: 'text-ivory-dim' },
+  drop: { short: 'D', label: 'Dégressive (drop set)', color: 'text-amethyst-light' },
+  failure: { short: 'F', label: "Jusqu'à l'échec", color: 'text-danger' },
 }
 
 export async function getActiveWorkout() {
@@ -19,22 +20,30 @@ async function latestBodyweight() {
   return last?.weight
 }
 
-/** Séries préremplies avec les valeurs de la dernière séance pour cet exercice. */
-async function prefillFromHistory(exerciseId: string, template: SetData[]): Promise<WorkoutSet[]> {
+/**
+ * Séries préremplies avec les valeurs de la dernière séance pour cet exercice,
+ * avec +2,5 kg si toutes les reps visées avaient été réussies.
+ */
+async function prefillFromHistory(exerciseId: string, template: SetData[]): Promise<{ sets: WorkoutSet[]; progression?: { from: number; to: number } }> {
   const ex = await db.exercises.get(exerciseId)
+  const settings = await getSettings()
   const done = await db.workouts.where('status').equals('done').reverse().sortBy('startedAt')
   const last = ex ? exerciseHistory(ex, done.slice(0, 60))[0] : undefined
-  return template.map((s, i) => {
+  const progression = settings.autoProgression && ex?.kind === 'weight_reps' ? progressedWeight(template, last?.sets) : undefined
+  const sets = template.map((s, i) => {
     const prev = last?.sets.filter((p) => p.type === s.type)[template.slice(0, i).filter((t) => t.type === s.type).length]
+    let weight = s.weight ?? prev?.weight
+    if (progression && s.type === 'normal' && weight === progression.from) weight = progression.to
     return {
       type: s.type,
-      weight: s.weight ?? prev?.weight,
+      weight,
       reps: s.reps ?? prev?.reps,
       duration: s.duration ?? prev?.duration,
       distance: s.distance ?? prev?.distance,
       done: false,
     }
   })
+  return { sets, progression }
 }
 
 export async function startWorkout(routine?: Routine): Promise<string> {
@@ -42,14 +51,8 @@ export async function startWorkout(routine?: Routine): Promise<string> {
   if (existing) return existing.id
   const exercises: WorkoutExercise[] = []
   for (const re of routine?.exercises ?? []) {
-    exercises.push({
-      uid: uid(),
-      exerciseId: re.exerciseId,
-      restSec: re.restSec,
-      notes: re.notes,
-      supersetId: re.supersetId,
-      sets: await prefillFromHistory(re.exerciseId, re.sets.length ? re.sets : [{ type: 'normal' }]),
-    })
+    const { sets, progression } = await prefillFromHistory(re.exerciseId, re.sets.length ? re.sets : [{ type: 'normal' }])
+    exercises.push({ uid: uid(), exerciseId: re.exerciseId, restSec: re.restSec, notes: re.notes, supersetId: re.supersetId, sets, progression })
   }
   const now = new Date()
   const hour = now.getHours()
@@ -70,7 +73,7 @@ export async function startWorkout(routine?: Routine): Promise<string> {
 
 export async function newWorkoutExercise(exercise: Exercise): Promise<WorkoutExercise> {
   const settings = await getSettings()
-  const sets = await prefillFromHistory(exercise.id, [{ type: 'normal' }, { type: 'normal' }, { type: 'normal' }])
+  const { sets } = await prefillFromHistory(exercise.id, [{ type: 'normal' }, { type: 'normal' }, { type: 'normal' }])
   return { uid: uid(), exerciseId: exercise.id, restSec: settings.defaultRestSec, sets }
 }
 

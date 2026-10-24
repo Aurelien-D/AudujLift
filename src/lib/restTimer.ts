@@ -4,6 +4,8 @@ import { useSyncExternalStore } from 'react'
 interface TimerState {
   endAt: number | null
   total: number
+  /** Ce qui vient après le repos (« Série 3 · 80 kg × 8 ») */
+  next?: string
 }
 
 const KEY = 'audujlift.restTimer'
@@ -33,8 +35,9 @@ function schedule() {
   if (!state.endAt) return
   timeout = setTimeout(
     () => {
+      const next = state.next
       set({ endAt: null, total: 0 })
-      alertEnd()
+      void alertEnd(next)
     },
     Math.max(0, state.endAt - Date.now()),
   )
@@ -46,7 +49,7 @@ let audioCtx: AudioContext | undefined
 export function unlockAudio() {
   try {
     audioCtx ??= new AudioContext()
-    if (audioCtx.state === 'suspended') void audioCtx.resume()
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {})
   } catch {
     /* pas de son disponible */
   }
@@ -68,29 +71,29 @@ function beep() {
   }
 }
 
-async function alertEnd() {
+async function alertEnd(next?: string) {
   navigator.vibrate?.([300, 120, 300, 120, 500])
   beep()
   if (document.visibilityState === 'hidden' && 'Notification' in window && Notification.permission === 'granted') {
     const reg = await navigator.serviceWorker?.getRegistration()
-    const opts = { body: "C'est reparti pour la série suivante 💪", icon: 'pwa-192.png', tag: 'rest' }
+    const opts = { body: next ? `À toi : ${next}` : "C'est reparti pour la série suivante", icon: 'pwa-192.png', tag: 'rest' }
     if (reg) await reg.showNotification('Repos terminé', opts)
     else new Notification('Repos terminé', opts)
   }
 }
 
 export const restTimer = {
-  start(seconds: number) {
+  start(seconds: number, next?: string) {
     if (seconds <= 0) return
     unlockAudio()
     if ('Notification' in window && Notification.permission === 'default') void Notification.requestPermission()
-    set({ endAt: Date.now() + seconds * 1000, total: seconds })
+    set({ endAt: Date.now() + seconds * 1000, total: seconds, next })
   },
   add(seconds: number) {
     if (!state.endAt) return
     const endAt = state.endAt + seconds * 1000
     if (endAt <= Date.now()) return set({ endAt: null, total: 0 })
-    set({ endAt, total: Math.max(1, state.total + seconds) })
+    set({ ...state, endAt, total: Math.max(1, state.total + seconds) })
   },
   stop() {
     set({ endAt: null, total: 0 })

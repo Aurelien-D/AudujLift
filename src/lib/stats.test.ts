@@ -51,6 +51,8 @@ describe('historique et records', () => {
     const labels = detectPRs(ws[1], ws, map).map((p) => p.label)
     expect(labels).toContain('1RM estimé')
     expect(labels).toContain('Charge max')
+    const max = detectPRs(ws[1], ws, map).find((p) => p.label === 'Charge max')
+    expect(max?.previous).toMatch(/kg$/)
   })
 })
 

@@ -29,28 +29,28 @@ export function PlateCalculator({ open, onClose, initial }: { open: boolean; onC
         </Field>
       </div>
       <div className="mt-6 flex h-28 items-center justify-center">
-        <div className="h-3 w-10 rounded-l bg-zinc-500" />
+        <div className="h-3 w-10 rounded-l bg-silver-dim" />
         {plates.map((p, i) => (
           <div
             key={i}
-            className="mx-px flex w-4 items-center justify-center rounded-sm text-[9px] font-bold text-zinc-950 [writing-mode:vertical-rl]"
+            className="mx-px flex w-4 items-center justify-center rounded-sm text-[9px] font-bold text-ink [writing-mode:vertical-rl]"
             style={{ height: PLATE_STYLE[p]?.h ?? 40, background: PLATE_STYLE[p]?.color ?? '#71717a' }}
           >
             {p}
           </div>
         ))}
-        <div className="h-3 w-6 rounded-r bg-zinc-500" />
+        <div className="h-3 w-6 rounded-r bg-silver-dim" />
       </div>
-      <p className="mt-2 text-center text-sm text-zinc-300">
+      <p className="mt-2 text-center text-sm text-ivory-dim">
         {plates.length ? (
           <>
-            De chaque côté : <span className="font-semibold text-lime-300">{plates.join(' + ')} kg</span>
+            De chaque côté : <span className="font-semibold text-gold-pale">{plates.join(' + ')} kg</span>
           </>
         ) : (
           'Barre seule'
         )}
       </p>
-      {remainder > 0 && <p className="mt-1 text-center text-xs text-amber-400">{remainder} kg ne peuvent pas être chargés avec tes disques.</p>}
+      {remainder > 0 && <p className="mt-1 text-center text-xs text-warn">{remainder} kg ne peuvent pas être chargés avec tes disques.</p>}
     </Sheet>
   )
 }

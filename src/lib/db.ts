@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { DEFAULT_EXERCISES, libraryRowToExercise, type LibraryRow } from './exercises-data'
 import { activeProfileId, dbNameFor } from './profiles'
-import type { BodyWeight, DayLog, Exercise, Food, FoodEntry, Routine, Settings, Workout } from './types'
+import type { BodyWeight, DayLog, Exercise, Food, FoodEntry, Measurement, ProgressPhoto, Routine, SavedMeal, Settings, Workout } from './types'
 
 export const DEFAULT_SETTINGS: Settings = {
   name: '',
@@ -16,6 +16,11 @@ export const DEFAULT_SETTINGS: Settings = {
   barWeight: 20,
   availablePlates: [25, 20, 15, 10, 5, 2.5, 1.25],
   onboarded: false,
+  keepAwake: true,
+  askRpe: true,
+  autoProgression: true,
+  splitGoals: false,
+  restGoals: { kcal: 2200, protein: 150, carbs: 220, fat: 80 },
 }
 
 interface SettingsRow {
@@ -32,6 +37,9 @@ export class AudujLiftDB extends Dexie {
   days!: EntityTable<DayLog, 'date'>
   bodyweights!: EntityTable<BodyWeight, 'id'>
   settings!: EntityTable<SettingsRow, 'key'>
+  meals!: EntityTable<SavedMeal, 'id'>
+  measurements!: EntityTable<Measurement, 'id'>
+  photos!: EntityTable<ProgressPhoto, 'id'>
 
   constructor(name: string) {
     super(name)
@@ -44,6 +52,12 @@ export class AudujLiftDB extends Dexie {
       days: 'date',
       bodyweights: 'id, date',
       settings: 'key',
+    })
+    // v2 : repas favoris, mensurations, photos de progression (tables ajoutées, rien n'est modifié)
+    this.version(2).stores({
+      meals: 'id, name, lastUsedAt',
+      measurements: 'id, date',
+      photos: 'id, date',
     })
     this.on('populate', (tx) => {
       tx.table('exercises').bulkAdd(DEFAULT_EXERCISES)
@@ -79,7 +93,12 @@ export async function syncDefaultExercises() {
 
 export async function getSettings(): Promise<Settings> {
   const row = await db.settings.get('settings')
-  return { ...DEFAULT_SETTINGS, ...row?.value, goals: { ...DEFAULT_SETTINGS.goals, ...row?.value?.goals } }
+  return {
+    ...DEFAULT_SETTINGS,
+    ...row?.value,
+    goals: { ...DEFAULT_SETTINGS.goals, ...row?.value?.goals },
+    restGoals: { ...DEFAULT_SETTINGS.restGoals, ...row?.value?.restGoals },
+  }
 }
 
 export async function saveSettings(patch: Partial<Settings>) {

@@ -21,11 +21,11 @@ export function ExerciseGuide({ exercise }: { exercise: Exercise }) {
 
   useEffect(() => {
     let cancelled = false
-    loadGuides().then((g) => !cancelled && setSteps(g[exercise.id] ?? null))
+    loadGuides().then((g) => !cancelled && setSteps(g[exercise.guideId ?? exercise.id] ?? null))
     return () => {
       cancelled = true
     }
-  }, [exercise.id])
+  }, [exercise.id, exercise.guideId])
 
   if (!images.length && !steps) return null
   return (

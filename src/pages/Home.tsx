@@ -86,7 +86,7 @@ export default function Home() {
   const volDelta = volume.before > 0 ? Math.round(((volume.now - volume.before) / volume.before) * 100) : undefined
 
   return (
-    <div className="pt-safe animate-page mx-auto max-w-xl px-4 pt-5 pb-36">
+    <div className="animate-page mx-auto max-w-xl px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-36">
       <header className="mb-5 flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="label">{formatDate(Date.now())}</p>

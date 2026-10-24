@@ -111,6 +111,7 @@ export default function Profile() {
             <NumberInput value={weight} onChange={setWeight} />
           </Field>
         </div>
+        <p className="-mt-1 text-xs text-silver">Sexe, âge, taille et poids servent aussi à calculer tes rangs (Progrès → Rangs).</p>
         <Field label="Niveau d'activité" hint={ACTIVITY_LABELS[s.activity].hint}>
           <Select
             value={s.activity}

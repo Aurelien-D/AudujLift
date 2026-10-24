@@ -13,7 +13,7 @@ import { MUSCLE_LABELS } from '../../lib/exercises-data'
 import { useDoneWorkouts, useExerciseMap, useExercises, useLatestBodyweight, useSettings } from '../../lib/hooks'
 import { muscleSets as countMuscleSets } from '../../lib/insights'
 import { sumNutrients } from '../../lib/nutrition'
-import { bodyRegion, computeRank, exerciseHistory, personalRecords, rankFromScore, RANKS, workoutTotals, type RankResult } from '../../lib/stats'
+import { ageFromBirthYear, bodyRegion, computeRank, exerciseHistory, personalRecords, rankFromScore, RANKS, workoutTotals, type RankResult } from '../../lib/stats'
 import type { Exercise, MuscleGroup } from '../../lib/types'
 import { addDays, formatDuration, formatNumber, formatShortDate, fromISODate, startOfWeek, toISODate, uid } from '../../lib/utils'
 
@@ -155,11 +155,16 @@ function RanksTab() {
       if (!ex.standard) continue
       const pr = personalRecords(exerciseHistory(ex, workouts, bw))
       if (!pr.bestE1rm) continue
-      const rank = computeRank(pr.bestE1rm.value, ex.standard, { sex: settings.sex, bodyweight: bw, heightCm: settings.heightCm }, bodyRegion(ex))
+      const rank = computeRank(
+        pr.bestE1rm.value,
+        ex.standard,
+        { sex: settings.sex, bodyweight: bw, heightCm: settings.heightCm, age: ageFromBirthYear(settings.birthYear) },
+        bodyRegion(ex),
+      )
       if (rank) out.push({ ex, rank, e1rm: pr.bestE1rm.value })
     }
     return out.sort((a, b) => b.rank.score - a.rank.score)
-  }, [exercises, workouts, bw, settings.sex, settings.heightCm])
+  }, [exercises, workouts, bw, settings.sex, settings.heightCm, settings.birthYear])
 
   const byMuscle = useMemo(() => {
     const m = new Map<MuscleGroup, (typeof ranked)[number]>()
@@ -258,7 +263,9 @@ function RanksExplainer({ heightKnown }: { heightKnown: boolean }) {
       <p className="mt-3">
         Du Bronze au Diamant, chaque rang a 4 divisions (IV → I). Maître, Grand Maître et Challenger n'en ont pas : Challenger correspond au niveau des meilleurs athlètes de force.
       </p>
-      <p className="mt-2">Ton 1RM estimé (meilleure série) est ramené à celui d'un homme de 80 kg et 1,76 m de même niveau, puis comparé au standard de l'exercice :</p>
+      <p className="mt-2">
+        Ton 1RM estimé (meilleure série) est ramené à celui d'un homme de 80 kg et 1,76 m, âgé de 23 à 40 ans, de même niveau, puis comparé au standard de l'exercice :
+      </p>
       <ul className="mt-1 list-disc space-y-1 pl-5">
         <li>
           <span className="text-ivory-dim">Sexe et poids</span> : formule DOTS, utilisée en compétition de force athlétique. Les plus lourds ne sont pas pénalisés comme avec un
@@ -266,6 +273,10 @@ function RanksExplainer({ heightKnown }: { heightKnown: boolean }) {
         </li>
         <li>
           <span className="text-ivory-dim">Haut / bas du corps</span> : pour les femmes, l'écart est plus marqué sur le haut du corps ; les standards en tiennent compte.
+        </li>
+        <li>
+          <span className="text-ivory-dim">Âge</span> : coefficients officiels de la force athlétique (Foster avant 23 ans, McCulloch après 40 ans), calculés avec ton année de
+          naissance. Entre 23 et 40 ans, aucune correction ; à 50 ans, une charge compte 13 % de plus, à 60 ans 34 %.
         </li>
         <li>
           <span className="text-ivory-dim">Taille</span> : à poids égal, une personne plus grande a des leviers plus longs ; correction modérée, au plus ±8 %.

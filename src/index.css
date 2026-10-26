@@ -188,8 +188,25 @@ input[type='number'] {
     opacity: 1;
   }
 }
+@keyframes rank-in {
+  0% {
+    transform: scale(0.3) rotate(-20deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.18) rotate(4deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
 
 @layer components {
+  .animate-rank {
+    animation: rank-in 0.55s var(--ease-solar) both;
+  }
   .animate-sheet {
     animation: sheet-up 0.26s var(--ease-solar);
   }

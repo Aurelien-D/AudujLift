@@ -11,6 +11,7 @@ import { formatSet, setLabels } from '../../components/workout-parts'
 import { db } from '../../lib/db'
 import { EQUIPMENT_LABELS, KIND_LABELS, MUSCLE_LABELS } from '../../lib/exercises-data'
 import { useDoneWorkouts, useLatestBodyweight, useSettings } from '../../lib/hooks'
+import { standardFor, unrankedReason } from '../../lib/rank-standards'
 import { ageFromBirthYear, bodyRegion, computeRank, e1rmForLevel, exerciseHistory, personalRecords, RANKS } from '../../lib/stats'
 import { cn, formatDate, formatNumber, formatShortDate } from '../../lib/utils'
 import { SET_TYPE_LABELS } from '../../lib/workout'
@@ -41,7 +42,8 @@ export default function ExerciseDetail() {
   const strength = exercise.kind === 'weight_reps' || exercise.kind === 'bodyweight'
   const body = { sex: settings.sex, bodyweight: bw ?? 0, heightCm: settings.heightCm, age: ageFromBirthYear(settings.birthYear) }
   const region = bodyRegion(exercise)
-  const rank = strength && exercise.standard && bw && pr.bestE1rm ? computeRank(pr.bestE1rm.value, exercise.standard, body, region) : undefined
+  const std = standardFor(exercise)
+  const rank = std && bw && pr.bestE1rm ? computeRank(pr.bestE1rm.value, std.value, body, region) : undefined
 
   const chartData = [...history]
     .reverse()
@@ -81,7 +83,7 @@ export default function ExerciseDetail() {
       {exercise.notes && <p className="mt-3 text-sm text-gold-pale/80">{exercise.notes}</p>}
       <ExerciseGuide exercise={exercise} />
 
-      {strength && exercise.standard && (
+      {std ? (
         <Card className="mt-4">
           {rank ? (
             <div className="flex items-center gap-4">
@@ -96,7 +98,7 @@ export default function ExerciseDetail() {
                 </div>
                 {rank.nextLabel && rank.nextLevel != null && (
                   <p className="mt-1.5 text-xs text-silver">
-                    {rank.nextLabel} à {formatNumber(e1rmForLevel(rank.nextLevel, exercise.standard, body, region), 0)} kg de 1RM estimé
+                    {rank.nextLabel} à {formatNumber(e1rmForLevel(rank.nextLevel, std.value, body, region), 0)} kg de 1RM estimé
                   </p>
                 )}
               </div>
@@ -112,18 +114,15 @@ export default function ExerciseDetail() {
               {RANKS.map((r) => (
                 <div key={r.key} className="flex justify-between rounded bg-ink/60 px-2 py-1">
                   <span style={{ color: r.color }}>{r.name}</span>
-                  <span>
-                    {r.min === 0
-                      ? 'départ'
-                      : bw
-                        ? `${formatNumber(e1rmForLevel(r.min, exercise.standard!, body, region), 0)} kg`
-                        : `${formatNumber(r.min * exercise.standard!, 2)}×PDC`}
-                  </span>
+                  <span>{r.min === 0 ? 'départ' : bw ? `${formatNumber(e1rmForLevel(r.min, std.value, body, region), 0)} kg` : `${formatNumber(r.min * std.value, 2)}×PDC`}</span>
                 </div>
               ))}
             </div>
+            {std.estimated && <p className="mt-2">Barème estimé à partir d'exercices comparables (même muscle, même matériel).</p>}
           </details>
         </Card>
+      ) : (
+        <p className="mt-4 rounded-2xl border border-dashed border-line px-4 py-3 text-xs text-silver">{unrankedReason(exercise)}</p>
       )}
 
       {history.length === 0 ? (

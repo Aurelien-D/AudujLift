@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BarsChart, TrendChart } from '../../components/charts'
 import { Measurements, ProgressPhotos } from './BodyExtras'
 import { MuscleMap } from '../../components/MuscleMap'
@@ -10,17 +10,19 @@ import { Stagnations } from '../../components/Stagnations'
 import { Button, Card, EmptyState, IconButton, NumberInput, Page, SectionTitle, Stat, Tabs } from '../../components/ui'
 import { db } from '../../lib/db'
 import { MUSCLE_LABELS } from '../../lib/exercises-data'
-import { useDoneWorkouts, useExerciseMap, useExercises, useLatestBodyweight, useSettings } from '../../lib/hooks'
+import { useDoneWorkouts, useExerciseMap, useExercises, useRankBody, useSettings } from '../../lib/hooks'
 import { muscleSets as countMuscleSets } from '../../lib/insights'
 import { sumNutrients } from '../../lib/nutrition'
-import { ageFromBirthYear, bodyRegion, computeRank, exerciseHistory, personalRecords, rankFromScore, RANKS, workoutTotals, type RankResult } from '../../lib/stats'
-import type { Exercise, MuscleGroup } from '../../lib/types'
+import { rankSnapshot } from '../../lib/rank-standards'
+import { RANKS, workoutTotals } from '../../lib/stats'
+import type { MuscleGroup } from '../../lib/types'
 import { addDays, formatDuration, formatNumber, formatShortDate, fromISODate, startOfWeek, toISODate, uid } from '../../lib/utils'
 
 type Tab = 'body' | 'ranks' | 'stats'
 
 export default function Progress() {
-  const [tab, setTab] = useState<Tab>('body')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState<Tab>(params.get('tab') === 'ranks' ? 'ranks' : 'body')
   return (
     <Page title="Progrès">
       <Tabs
@@ -145,50 +147,27 @@ function RanksTab() {
   const navigate = useNavigate()
   const exercises = useExercises()
   const workouts = useDoneWorkouts()
-  const bw = useLatestBodyweight()
+  const body = useRankBody()
   const settings = useSettings()
 
-  const ranked = useMemo(() => {
-    if (!exercises || !workouts || !bw) return []
-    const out: { ex: Exercise; rank: RankResult; e1rm: number }[] = []
-    for (const ex of exercises) {
-      if (!ex.standard) continue
-      const pr = personalRecords(exerciseHistory(ex, workouts, bw))
-      if (!pr.bestE1rm) continue
-      const rank = computeRank(
-        pr.bestE1rm.value,
-        ex.standard,
-        { sex: settings.sex, bodyweight: bw, heightCm: settings.heightCm, age: ageFromBirthYear(settings.birthYear) },
-        bodyRegion(ex),
-      )
-      if (rank) out.push({ ex, rank, e1rm: pr.bestE1rm.value })
-    }
-    return out.sort((a, b) => b.rank.score - a.rank.score)
-  }, [exercises, workouts, bw, settings.sex, settings.heightCm, settings.birthYear])
+  const snapshot = useMemo(() => (exercises && workouts && body ? rankSnapshot(exercises, workouts, body) : undefined), [exercises, workouts, body])
+  const ranked = useMemo(() => [...(snapshot?.byExercise.values() ?? [])].sort((a, b) => b.rank.score - a.rank.score), [snapshot])
+  const byMuscle = snapshot?.byMuscle ?? new Map()
 
-  const byMuscle = useMemo(() => {
-    const m = new Map<MuscleGroup, (typeof ranked)[number]>()
-    for (const r of ranked) {
-      const cur = m.get(r.ex.muscle)
-      if (!cur || r.rank.score > cur.rank.score) m.set(r.ex.muscle, r)
-    }
-    return m
-  }, [ranked])
-
-  if (!bw)
+  if (!body)
     return (
       <EmptyState title="Ajoute ton poids de corps">
         Les rangs comparent ta force (1RM estimé) en tenant compte de ton sexe, de ton poids et de ta taille. Renseigne une pesée dans l'onglet « Corps ».
       </EmptyState>
     )
-  if (!ranked.length)
+  if (!ranked.length || !snapshot?.overall)
     return (
       <EmptyState title="Pas encore de rang">
-        Termine une séance avec des exercices de base (développé couché, squat, soulevé de terre, tractions…) pour débloquer tes rangs.
+        Termine une séance avec des exercices de musculation (développé couché, squat, tractions, curl, machines…) pour débloquer tes rangs.
       </EmptyState>
     )
 
-  const overall: RankResult = rankFromScore([...byMuscle.values()].reduce((s, r) => s + r.rank.score, 0) / byMuscle.size)
+  const overall = snapshot.overall
 
   return (
     <>
@@ -227,13 +206,13 @@ function RanksTab() {
 
       <SectionTitle>Par exercice</SectionTitle>
       <div className="space-y-2">
-        {ranked.map(({ ex, rank, e1rm }) => (
+        {ranked.map(({ ex, rank, e1rm, estimated }) => (
           <Card key={ex.id} className="flex items-center gap-3 p-3" onClick={() => navigate(`/exercises/${ex.id}`)}>
             <RankBadge result={rank} />
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{ex.name}</div>
               <div className="text-xs text-silver">
-                1RM ~{formatNumber(e1rm, 0)} kg · {formatNumber(rank.ratio, 2)}× ton poids
+                1RM ~{formatNumber(e1rm, 0)} kg · {formatNumber(rank.ratio, 2)}× ton poids{estimated && ' · barème estimé'}
               </div>
               <div className="mt-1.5">
                 <RankProgress result={rank} />
@@ -287,6 +266,11 @@ function RanksExplainer({ heightKnown }: { heightKnown: boolean }) {
           Renseigne ta taille dans le profil pour un rang plus juste
         </button>
       )}
+      <p className="mt-2">
+        Les exercices de la grande bibliothèque et ceux que tu crées reçoivent un <span className="text-ivory-dim">barème estimé</span> d'après les exercices comparables (même
+        muscle, même matériel, poly- ou mono-articulaire). Pas de rang pour le gainage, le cardio, les étirements, les élastiques ni les exercices au poids du corps en longues
+        séries (pompes, abdos) : un 1RM n'y a pas de sens.
+      </p>
       <p className="mt-3 text-xs text-silver-dim">Standards indicatifs : ils servent à se situer et à progresser, pas à se juger.</p>
     </details>
   )

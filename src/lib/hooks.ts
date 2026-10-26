@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { DEFAULT_SETTINGS, db, getSettings } from './db'
+import { ageFromBirthYear, type BodyProfile } from './stats'
 import type { Exercise, Settings } from './types'
 import { fromISODate } from './utils'
 
@@ -27,6 +28,16 @@ export function useActiveWorkout() {
 
 export function useLatestBodyweight(): number | undefined {
   return useLiveQuery(async () => (await db.bodyweights.orderBy('date').last())?.weight, [])
+}
+
+/** Gabarit utilisé pour les rangs (sexe, dernière pesée, taille, âge) ; null sans pesée, undefined pendant le chargement. */
+export function useRankBody(): BodyProfile | null | undefined {
+  const settings = useSettings()
+  const bw = useLiveQuery(async () => (await db.bodyweights.orderBy('date').last())?.weight ?? null, [])
+  return useMemo(
+    () => (bw === undefined ? undefined : bw ? { sex: settings.sex, bodyweight: bw, heightCm: settings.heightCm, age: ageFromBirthYear(settings.birthYear) } : null),
+    [bw, settings.sex, settings.heightCm, settings.birthYear],
+  )
 }
 
 /** Jour d'entraînement ? Choix manuel s'il existe, sinon vrai si une séance a eu lieu ce jour-là. */

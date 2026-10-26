@@ -3,6 +3,7 @@ import { Clock, Flame, Loader2, Pencil, Repeat, Save, Share2, Trash2, Trophy } f
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ExerciseThumb } from '../../components/ExercisePicker'
+import { RankReveal } from '../../components/RankReveal'
 import { SolarSigil } from '../../components/SolarSigil'
 import { Button, Card, IconButton, NumberInput, Page, Stat } from '../../components/ui'
 import { columnsFor, formatSet, readCol, setLabels, writeCol } from '../../components/workout-parts'
@@ -36,6 +37,23 @@ export default function WorkoutDetail() {
   const [edit, setEdit] = useState<Workout | null>(null)
   const [routineSaved, setRoutineSaved] = useState(false)
   const [sharing, setSharing] = useState(false)
+  // Fenêtre des rangs : une seule fois par séance terminée (pas à chaque retour sur le récap)
+  const revealKey = `audujlift.rankReveal.${id}`
+  const [reveal, setReveal] = useState(() => {
+    try {
+      return summary && !sessionStorage.getItem(revealKey)
+    } catch {
+      return summary
+    }
+  })
+  const closeReveal = () => {
+    try {
+      sessionStorage.setItem(revealKey, '1')
+    } catch {
+      // stockage indisponible (navigation privée) : la fenêtre se fermera simplement
+    }
+    setReveal(false)
+  }
 
   const prs = useMemo(() => (workout && all ? detectPRs(workout, all, exMap, workout.bodyweight) : []), [workout, all, exMap])
   const streak = useMemo(
@@ -121,6 +139,7 @@ export default function WorkoutDetail() {
         ))
       }
     >
+      {reveal && <RankReveal workout={workout} onClose={closeReveal} />}
       {summary && (
         <Card glow className="animate-rise relative mb-4 overflow-hidden p-5">
           <SolarSigil size={150} className="animate-sun pointer-events-none absolute -top-10 -right-10 text-gold/[0.08]" />

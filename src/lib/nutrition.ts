@@ -63,6 +63,11 @@ export function scaleNutrients(per100: Nutrients, quantity: number): Nutrients {
   return out
 }
 
+/** Valeurs d'une portion ramenées à une autre quantité (même aliment). */
+export function rescaleNutrients(n: Nutrients, from: number, to: number): Nutrients {
+  return from > 0 ? scaleNutrients(n, (to / from) * 100) : n
+}
+
 export function sumNutrients(list: Nutrients[]): Nutrients {
   const out: Nutrients = { kcal: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, fiber: 0, saturatedFat: 0, salt: 0 }
   for (const n of list) {

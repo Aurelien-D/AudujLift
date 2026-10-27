@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App.tsx'
 import { reloadForNewVersion } from './components/ErrorBoundary'
+import { consumeStravaRedirect } from './lib/strava'
 import '@fontsource-variable/inter'
 import '@fontsource-variable/space-grotesk'
 import './index.css'
@@ -20,6 +21,9 @@ registerSW({
 window.addEventListener('vite:preloadError', (event) => {
   if (reloadForNewVersion()) event.preventDefault()
 })
+
+// Retour de l'autorisation Strava : l'adresse est réécrite vers le profil avant le démarrage du routeur
+consumeStravaRedirect()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -10,6 +10,7 @@ import { ACTIVITY_LABELS, GOAL_LABELS, suggestGoals } from '../lib/nutrition'
 import { forgetOffAccount, offAccount } from '../lib/off-contribute'
 import { aiKey, aiUsage, forgetAiKey, maskKey } from '../lib/plate-ai'
 import { AiKeySetup } from './nutrition/PlatePhoto'
+import { StravaSettings } from '../components/StravaSettings'
 import { activeProfile, listProfiles, renameProfile } from '../lib/profiles'
 import type { Activity, Goal, Settings } from '../lib/types'
 import { formatClock, formatShortDate, toISODate, uid } from '../lib/utils'
@@ -268,6 +269,11 @@ export default function Profile() {
         ) : (
           <AiKeySetup onSaved={() => setAiKeyValue(aiKey())} />
         )}
+      </Card>
+
+      <SectionTitle>Strava</SectionTitle>
+      <Card>
+        <StravaSettings />
       </Card>
 
       <SectionTitle>Mes données</SectionTitle>

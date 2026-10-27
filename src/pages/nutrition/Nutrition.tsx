@@ -26,6 +26,7 @@ import { goalsForDay, MEAL_LABELS, MEALS, sumNutrients } from '../../lib/nutriti
 import type { FoodEntry, Meal } from '../../lib/types'
 import { addDays, cn, formatDayLabel, formatNumber, toISODate, uid } from '../../lib/utils'
 import { DayQualityCard } from './DayQualityCard'
+import { EntryEditor } from './EntryEditor'
 import { SmartCalories } from './SmartCalories'
 
 const MEAL_ICON: Record<Meal, typeof Coffee> = { breakfast: Coffee, lunch: UtensilsCrossed, snack: Apple, dinner: Moon }
@@ -91,6 +92,7 @@ export default function Nutrition() {
   const entries = useLiveQuery(() => db.entries.where('date').equals(date).sortBy('createdAt'), [date])
   const day = useLiveQuery(() => db.days.get(date), [date])
   const [mealMenu, setMealMenu] = useState<Meal | null>(null)
+  const [editing, setEditing] = useState<FoodEntry | null>(null)
 
   const water = day?.waterMl ?? 0
   const addWater = (ml: number) => db.days.put({ ...day, date, waterMl: Math.max(0, water + ml) })
@@ -122,7 +124,7 @@ export default function Nutrition() {
 
   const openEntry = (e: FoodEntry) => {
     if (e.foodId) navigate(`/nutrition/food/${e.foodId}?date=${date}&meal=${e.meal}&entry=${e.id}`)
-    else if (confirm(`Supprimer « ${e.name} » ?`)) void db.entries.delete(e.id)
+    else setEditing(e) // estimation de l'IA ou ajout rapide : pas de fiche, on modifie l'entrée elle-même
   }
 
   return (
@@ -245,6 +247,7 @@ export default function Nutrition() {
           />
         )}
       </Sheet>
+      {editing && <EntryEditor entry={editing} onClose={() => setEditing(null)} />}
     </Page>
   )
 }

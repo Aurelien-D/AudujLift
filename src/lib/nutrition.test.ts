@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bmr, scaleNutrients, suggestGoals, sumNutrients } from './nutrition'
+import { bmr, rescaleNutrients, scaleNutrients, suggestGoals, sumNutrients } from './nutrition'
 
 describe('besoins caloriques', () => {
   it('Mifflin-St Jeor', () => {
@@ -27,5 +27,17 @@ describe('calculs nutritionnels', () => {
       { kcal: 50, protein: 1, carbs: 10, fat: 0, fiber: 3 },
     ])
     expect(t).toMatchObject({ kcal: 150, protein: 11, carbs: 15, fat: 2, fiber: 3 })
+  })
+})
+
+describe('modifier la quantité d’une entrée', () => {
+  it('les valeurs suivent la quantité en proportion', () => {
+    const n = rescaleNutrients({ kcal: 300, protein: 20, carbs: 30, fat: 10, fiber: 4 }, 150, 200)
+    expect(n.kcal).toBeCloseTo(400)
+    expect(n.protein).toBeCloseTo(26.67, 1)
+    expect(n.fiber).toBeCloseTo(5.33, 1)
+  })
+  it('sans quantité d’origine, rien ne change', () => {
+    expect(rescaleNutrients({ kcal: 300, protein: 20, carbs: 30, fat: 10 }, 0, 200).kcal).toBe(300)
   })
 })

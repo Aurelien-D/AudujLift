@@ -124,6 +124,8 @@ export interface Workout {
   notes?: string
   /** Poids de corps au moment de la séance (pour les rangs) */
   bodyweight?: number
+  /** Activité Strava créée à partir de cette séance */
+  stravaId?: number
 }
 
 // ---------- Nutrition ----------

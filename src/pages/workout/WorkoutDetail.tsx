@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ExerciseThumb } from '../../components/ExercisePicker'
 import { RankReveal } from '../../components/RankReveal'
+import { StravaPublish } from '../../components/StravaPublish'
 import { SolarSigil } from '../../components/SolarSigil'
 import { Button, Card, IconButton, NumberInput, Page, Stat } from '../../components/ui'
 import { columnsFor, formatSet, readCol, setLabels, writeCol } from '../../components/workout-parts'
@@ -217,6 +218,7 @@ export default function WorkoutDetail() {
               Terminer
             </Button>
           </div>
+          <StravaPublish workout={workout} exMap={exMap} prs={prs} summary />
           <Button variant="tertiary" className="mt-1 w-full" onClick={share} disabled={sharing}>
             {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Partager le récap
           </Button>
@@ -278,6 +280,7 @@ export default function WorkoutDetail() {
       )}
       {!edit && w.notes && <p className="mt-3 text-sm text-silver">{w.notes}</p>}
 
+      {!summary && !edit && <StravaPublish workout={workout} exMap={exMap} prs={prs} summary={false} />}
       {!summary && !edit && (
         <Button variant="tertiary" className="mt-4 w-full" onClick={share} disabled={sharing}>
           {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Partager le récap

@@ -134,7 +134,7 @@ export default function Workouts() {
                 <div className="flex items-start gap-2">
                   <div className="-mt-1.5">{handle}</div>
                   <div className="min-w-0 flex-1" onClick={() => navigate(`/workouts/routine/${r.id}`)}>
-                    <h3 className="truncate text-base font-semibold">
+                    <h3 className="line-clamp-2 text-base leading-snug font-semibold">
                       {r.name}
                       {r.sharedBy && <span className="ml-2 rounded-full border border-gold/40 px-2 py-0.5 align-middle text-[11px] font-normal text-gold">de {r.sharedBy}</span>}
                     </h3>

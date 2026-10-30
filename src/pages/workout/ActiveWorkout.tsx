@@ -1,6 +1,7 @@
 import {
   ArrowDown,
   ArrowUp,
+  ArrowUpDown,
   Calculator,
   Check,
   ChevronDown,
@@ -21,6 +22,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ExercisePicker, ExerciseThumb } from '../../components/ExercisePicker'
+import { ReorderExercises } from '../../components/ReorderExercises'
 import { PlateCalculator } from '../../components/PlateCalculator'
 import { SolarSigil } from '../../components/SolarSigil'
 import { ActionList, Button, IconButton, NumberInput, Sheet, Toast } from '../../components/ui'
@@ -65,6 +67,7 @@ export default function ActiveWorkout() {
   const loaded = useRef(false)
   const [picker, setPicker] = useState<{ replace?: string } | null>(null)
   const [menu, setMenu] = useState<string | null>(null)
+  const [reordering, setReordering] = useState(false)
   const [setMenuTarget, setSetMenuTarget] = useState<{ ex: string; idx: number } | null>(null)
   const [plates, setPlates] = useState<number | undefined | null>(null)
   const [showNotes, setShowNotes] = useState<Record<string, boolean>>({})
@@ -329,6 +332,14 @@ export default function ActiveWorkout() {
           <span className="text-silver">
             Reps <span className="font-semibold text-ivory">{totals.reps}</span>
           </span>
+          {w.exercises.length > 1 && (
+            <button
+              onClick={() => setReordering(true)}
+              className="press ml-auto -my-2.5 flex min-h-11 items-center gap-1 rounded-lg px-2 text-xs font-medium text-gold active:bg-raised"
+            >
+              <ArrowUpDown size={14} /> Réorganiser
+            </button>
+          )}
         </div>
 
         <div className="mt-4 space-y-3">
@@ -361,7 +372,7 @@ export default function ActiveWorkout() {
                       </button>
                     )}
                     <button onClick={() => navigate(`/exercises/${we.exerciseId}`)} className="min-w-0 flex-1 text-left">
-                      <div className={cn('font-display truncate text-base font-semibold', allDone ? 'text-gold' : 'text-ivory')}>
+                      <div className={cn('font-display line-clamp-2 text-base leading-snug font-semibold', allDone ? 'text-gold' : 'text-ivory')}>
                         {ex?.name ?? 'Exercice'}
                         {allDone && <Check size={16} className="ml-1 inline" />}
                       </div>
@@ -432,11 +443,12 @@ export default function ActiveWorkout() {
                             {s.rpe != null && <span className="mt-0.5 text-[9px] font-medium text-gold">@{s.rpe}</span>}
                           </button>
                           <button
-                            className="truncate text-center text-xs text-silver"
+                            aria-label={p ? `Reprendre ${formatSet(p, kind)}` : undefined}
+                            className="h-10 min-w-0 truncate rounded-lg text-center text-xs text-silver active:bg-raised"
                             disabled={!p}
                             onClick={() => p && updateSet(we.uid, i, { weight: p.weight, reps: p.reps, duration: p.duration, distance: p.distance })}
                           >
-                            {p ? formatSet(p, kind) : '—'}
+                            {p ? (kind === 'weight_reps' ? `${formatNumber(p.weight ?? 0)}×${p.reps ?? 0}` : formatSet(p, kind)) : '—'}
                           </button>
                           {cols.map((col) => (
                             <NumberInput
@@ -536,6 +548,7 @@ export default function ActiveWorkout() {
         </Button>
         <p className="mt-3 text-center text-xs text-silver-dim">Astuce : glisse une série vers la gauche pour la supprimer.</p>
       </main>
+      {reordering && <ReorderExercises exercises={w.exercises} exMap={exMap} onReorder={(exercises) => update({ exercises })} onClose={() => setReordering(false)} />}
 
       {record && (
         <Toast tone="record">
@@ -591,6 +604,7 @@ export default function ActiveWorkout() {
                 onClick: () => (setPlates(menuEx.sets.find((s) => !s.done)?.weight ?? menuEx.sets.at(-1)?.weight), setMenu(null)),
               },
               { icon: <LineChart size={20} />, label: 'Historique et records', onClick: () => navigate(`/exercises/${menuEx.exerciseId}`) },
+              { icon: <ArrowUpDown size={20} />, label: 'Réorganiser les exercices', onClick: () => (setReordering(true), setMenu(null)), hidden: w.exercises.length < 2 },
               { icon: <ArrowUp size={20} />, label: 'Monter', onClick: () => (move(menuEx.uid, -1), setMenu(null)), hidden: menuIdx === 0 },
               { icon: <ArrowDown size={20} />, label: 'Descendre', onClick: () => (move(menuEx.uid, 1), setMenu(null)), hidden: menuIdx === w.exercises.length - 1 },
               {

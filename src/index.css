@@ -250,3 +250,13 @@ input[type='number'] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* iPhone : Safari zoome toute la page quand on touche un champ écrit en moins de 16 px. On force 16 px dans les
+   champs, uniquement sur iOS (la règle est reconnue par Safari iOS seul), sans toucher à l'affichage ailleurs. */
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}

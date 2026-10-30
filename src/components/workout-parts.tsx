@@ -9,9 +9,9 @@ export const REST_OPTIONS = [0, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300]
 
 export function RestSelect({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
-    <label className="inline-flex items-center gap-1.5 rounded-lg bg-raised/80 px-2 py-1 text-xs text-ivory-dim">
+    <label className="inline-flex items-center gap-1.5 rounded-lg bg-raised/80 px-2.5 text-xs text-ivory-dim">
       <Timer size={14} className="text-gold" />
-      <select value={value} onChange={(e) => onChange(Number(e.target.value))} className="appearance-none bg-transparent outline-none">
+      <select value={value} onChange={(e) => onChange(Number(e.target.value))} className="min-h-9 appearance-none bg-transparent outline-none">
         {REST_OPTIONS.map((s) => (
           <option key={s} value={s}>
             {s === 0 ? 'Pas de repos' : `Repos ${formatClock(s)}`}

@@ -109,7 +109,7 @@ export default function ExerciseDetail() {
             </p>
           )}
           <details className="mt-3 text-xs text-silver">
-            <summary className="cursor-pointer">Barème des rangs</summary>
+            <summary className="-my-2 cursor-pointer py-2">Barème des rangs</summary>
             <div className="mt-2 grid grid-cols-2 gap-1">
               {RANKS.map((r) => (
                 <div key={r.key} className="flex justify-between rounded bg-ink/60 px-2 py-1">

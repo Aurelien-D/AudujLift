@@ -4,7 +4,17 @@ import { moveItem } from '../lib/routine-order'
 import { cn } from '../lib/utils'
 
 type Drag = { index: number; dy: number; target: number; step: number }
-type Start = { index: number; y: number; scrollY: number; tops: number[]; heights: number[]; gap: number; clientY: number }
+type Start = { index: number; y: number; scrollY: number; tops: number[]; heights: number[]; gap: number; clientY: number; scroller: HTMLElement | null }
+
+/** Conteneur qui défile autour de la liste (fenêtre d'une feuille), ou null pour la page elle-même. */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+    const o = getComputedStyle(p).overflowY
+    if ((o === 'auto' || o === 'scroll') && p.scrollHeight > p.clientHeight) return p
+  }
+  return null
+}
+const scrollTop = (s: Pick<Start, 'scroller'>) => (s.scroller ? s.scroller.scrollTop : window.scrollY)
 
 /** Place visée : le centre de l'élément tenu a dépassé le milieu de combien de voisins. */
 function targetFor(s: Start, dy: number): number {
@@ -16,8 +26,8 @@ function targetFor(s: Start, dy: number): number {
   return t
 }
 
-/** Liste réordonnable au doigt : on attrape la poignée, on glisse, on lâche. La page défile toute seule
- *  près des bords. Au clavier, les flèches haut/bas sur la poignée déplacent l'élément. */
+/** Liste réordonnable au doigt : on attrape la poignée, on glisse, on lâche. La page (ou la feuille qui contient
+ *  la liste) défile toute seule près des bords. Au clavier, les flèches haut/bas sur la poignée déplacent l'élément. */
 export function SortableList<T>({
   items,
   keyOf,
@@ -46,20 +56,24 @@ export function SortableList<T>({
   const update = () => {
     const s = start.current
     if (!s) return
-    const dy = s.clientY - s.y + (window.scrollY - s.scrollY)
+    const dy = s.clientY - s.y + (scrollTop(s) - s.scrollY)
     // Les voisins s'écartent de la hauteur de l'élément tenu + l'espace entre deux éléments
     setDrag({ index: s.index, dy, target: targetFor(s, dy), step: s.heights[s.index] + s.gap })
   }
 
-  // Défilement automatique quand le doigt approche du haut ou du bas de l'écran
+  // Défilement automatique quand le doigt approche du haut ou du bas de la zone qui défile
   const autoScroll = () => {
     const s = start.current
     if (!s) return
-    const edge = 120
+    const box = s.scroller?.getBoundingClientRect()
+    const top = box ? box.top : 0
+    const bottom = box ? box.bottom : window.innerHeight - 20
+    const edge = Math.min(120, (bottom - top) / 4)
     const y = s.clientY
-    const speed = y < edge ? -Math.ceil((edge - y) / 8) : y > window.innerHeight - edge - 20 ? Math.ceil((y - (window.innerHeight - edge - 20)) / 8) : 0
+    const speed = y < top + edge ? -Math.ceil((top + edge - y) / 8) : y > bottom - edge ? Math.ceil((y - (bottom - edge)) / 8) : 0
     if (speed) {
-      window.scrollBy(0, speed)
+      if (s.scroller) s.scroller.scrollBy(0, speed)
+      else window.scrollBy(0, speed)
       update()
     }
     raf.current = requestAnimationFrame(autoScroll)
@@ -70,7 +84,7 @@ export function SortableList<T>({
     const s = start.current
     cancelAnimationFrame(raf.current)
     start.current = null
-    const target = s ? targetFor(s, s.clientY - s.y + (window.scrollY - s.scrollY)) : -1
+    const target = s ? targetFor(s, s.clientY - s.y + (scrollTop(s) - s.scrollY)) : -1
     if (commit && s && target !== s.index) {
       const next = moveItem(shown, s.index, target)
       setDropped({ sig, keys: next.map(keyOf) })
@@ -99,12 +113,15 @@ export function SortableList<T>({
         e.stopPropagation()
         e.currentTarget.setPointerCapture(e.pointerId)
         const rects = shown.map((_, j) => refs.current[j]!.getBoundingClientRect())
+        const scroller = scrollParent(refs.current[index]!)
+        const sy = scrollTop({ scroller })
         start.current = {
           index,
           y: e.clientY,
           clientY: e.clientY,
-          scrollY: window.scrollY,
-          tops: rects.map((r) => r.top + window.scrollY),
+          scrollY: sy,
+          scroller,
+          tops: rects.map((r) => r.top + sy),
           heights: rects.map((r) => r.height),
           gap: rects.length > 1 ? Math.max(0, rects[1].top - rects[0].bottom) : 0,
         }

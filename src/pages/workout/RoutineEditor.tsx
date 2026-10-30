@@ -1,7 +1,8 @@
-import { ArrowDown, ArrowUp, Link2, MoreVertical, Plus, RefreshCw, Trash2, Unlink } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, Link2, MoreVertical, Plus, RefreshCw, Trash2, Unlink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ExercisePicker } from '../../components/ExercisePicker'
+import { ReorderExercises } from '../../components/ReorderExercises'
 import { ActionList, Button, Card, EmptyState, IconButton, inputClass, NumberInput, Page, Sheet } from '../../components/ui'
 import { columnsFor, readCol, RestSelect, setLabels, SetTypeSheet, supersetColor, writeCol } from '../../components/workout-parts'
 import { db } from '../../lib/db'
@@ -21,6 +22,7 @@ export default function RoutineEditor() {
   const [menu, setMenu] = useState<string | null>(null)
   const [setMenuTarget, setSetMenuTarget] = useState<{ ex: string; idx: number } | null>(null)
   const [dirty, setDirty] = useState(false)
+  const [reordering, setReordering] = useState(false)
 
   useEffect(() => {
     if (isNew) {
@@ -111,6 +113,14 @@ export default function RoutineEditor() {
         className={cn(inputClass, 'mt-2 text-sm')}
       />
 
+      {routine.exercises.length > 1 && (
+        <div className="mt-4 -mb-1 flex items-center justify-between px-1">
+          <span className="text-xs text-silver">{routine.exercises.length} exercices</span>
+          <Button variant="ghost" size="sm" onClick={() => setReordering(true)}>
+            <ArrowUpDown size={16} /> Réorganiser
+          </Button>
+        </div>
+      )}
       <div className="mt-4 space-y-3">
         {routine.exercises.length === 0 && <EmptyState title="Aucun exercice">Ajoute les exercices de ta séance, puis définis séries, répétitions et temps de repos.</EmptyState>}
         {routine.exercises.map((re) => {
@@ -127,7 +137,7 @@ export default function RoutineEditor() {
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <h3 className="min-w-0 flex-1 truncate font-semibold text-gold-pale">{ex?.name ?? 'Exercice supprimé'}</h3>
+                  <h3 className="line-clamp-2 min-w-0 flex-1 leading-snug font-semibold text-gold-pale">{ex?.name ?? 'Exercice supprimé'}</h3>
                   <IconButton aria-label="Options" onClick={() => setMenu(re.uid)}>
                     <MoreVertical size={18} />
                   </IconButton>
@@ -205,6 +215,7 @@ export default function RoutineEditor() {
         {menuEx && (
           <ActionList
             items={[
+              { icon: <ArrowUpDown size={20} />, label: 'Réorganiser les exercices', onClick: () => (setReordering(true), setMenu(null)), hidden: routine.exercises.length < 2 },
               { icon: <ArrowUp size={20} />, label: 'Monter', onClick: () => (move(menuEx.uid, -1), setMenu(null)), hidden: menuIdx === 0 },
               { icon: <ArrowDown size={20} />, label: 'Descendre', onClick: () => (move(menuEx.uid, 1), setMenu(null)), hidden: menuIdx === routine.exercises.length - 1 },
               {
@@ -240,6 +251,7 @@ export default function RoutineEditor() {
           setSetMenuTarget(null)
         }}
       />
+      {reordering && <ReorderExercises exercises={routine.exercises} exMap={exMap} onReorder={(exercises) => update({ exercises })} onClose={() => setReordering(false)} />}
     </Page>
   )
 }

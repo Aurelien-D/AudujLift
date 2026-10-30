@@ -109,3 +109,22 @@ export async function finishWorkout(w: Workout): Promise<Workout> {
   await db.workouts.put(done)
   return done
 }
+
+/** Après un changement d'ordre, un superset ne réunit que des exercices voisins : un exercice resté seul perd
+ *  son lien, et deux groupes séparés qui partageaient le même identifiant en reçoivent chacun un. */
+export function normalizeSupersets<T extends { supersetId?: string }>(list: T[], newId: () => string = uid): T[] {
+  const seen = new Set<string>()
+  const out = [...list]
+  for (let i = 0; i < out.length;) {
+    const sid = out[i].supersetId
+    let j = i + 1
+    while (sid && j < out.length && out[j].supersetId === sid) j++
+    if (sid) {
+      const id = j - i < 2 ? undefined : seen.has(sid) ? newId() : sid
+      seen.add(sid)
+      for (let k = i; k < j; k++) if (out[k].supersetId !== id) out[k] = { ...out[k], supersetId: id }
+    }
+    i = j
+  }
+  return out
+}

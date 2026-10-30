@@ -221,7 +221,7 @@ export default function Home() {
       {/* Progression */}
       <SectionTitle
         action={
-          <button onClick={() => navigate('/recap')} className="text-sm font-medium text-gold">
+          <button onClick={() => navigate('/recap')} className="-mx-2 -my-3 min-h-11 px-2 text-sm font-medium text-gold">
             Bilan
           </button>
         }
@@ -307,7 +307,7 @@ export default function Home() {
       {/* Nutrition */}
       <SectionTitle
         action={
-          <button onClick={() => navigate('/nutrition/add')} className="text-sm font-medium text-gold">
+          <button onClick={() => navigate('/nutrition/add')} className="-mx-2 -my-3 min-h-11 px-2 text-sm font-medium text-gold">
             + Ajouter
           </button>
         }

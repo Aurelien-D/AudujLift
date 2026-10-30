@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyFolderOrder, moveItem, sortRoutines } from './routine-order'
+import { normalizeSupersets } from './workout'
 import type { Routine } from './types'
 
 const r = (id: string, extra: Partial<Routine> = {}): Routine => ({ id, name: id, exercises: [], createdAt: 0, updatedAt: 0, ...extra })
@@ -26,5 +27,22 @@ describe('ordre des routines', () => {
     // Liste globale : P1, X, P2, P3 (P = dossier PPL, X = autre dossier)
     const sorted = [r('P1'), r('X'), r('P2'), r('P3')]
     expect(applyFolderOrder(sorted, ['P3', 'P1', 'P2'])).toEqual(['P3', 'X', 'P1', 'P2'])
+  })
+})
+
+describe('supersets après un changement d’ordre', () => {
+  const ids = () => {
+    let n = 0
+    return () => `n${++n}`
+  }
+  const ss = (...l: (string | undefined)[]) => l.map((supersetId, i) => ({ i, supersetId }))
+  it('un exercice sorti de son superset perd le lien', () => {
+    expect(normalizeSupersets(ss('a', undefined, 'a'), ids()).map((e) => e.supersetId)).toEqual([undefined, undefined, undefined])
+  })
+  it('les voisins gardent leur superset', () => {
+    expect(normalizeSupersets(ss(undefined, 'a', 'a', 'b', 'b'), ids()).map((e) => e.supersetId)).toEqual([undefined, 'a', 'a', 'b', 'b'])
+  })
+  it('deux groupes séparés reçoivent des identifiants distincts', () => {
+    expect(normalizeSupersets(ss('a', 'a', undefined, 'a', 'a'), ids()).map((e) => e.supersetId)).toEqual(['a', 'a', undefined, 'n1', 'n1'])
   })
 })

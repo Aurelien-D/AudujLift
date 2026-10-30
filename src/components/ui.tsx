@@ -82,7 +82,13 @@ export function Button({ variant = 'secondary', size = 'md', className, ...props
 }
 
 export function IconButton({ className, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button {...props} className={cn('press rounded-full p-2 text-ivory-dim active:bg-raised disabled:opacity-40', className)} />
+  // 44 px minimum : taille de doigt recommandée sur téléphone
+  return (
+    <button
+      {...props}
+      className={cn('press inline-flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-ivory-dim active:bg-raised disabled:opacity-40', className)}
+    />
+  )
 }
 
 // ---------- Conteneurs ----------
@@ -262,7 +268,7 @@ export function Chip({ active, children, onClick }: { active?: boolean; children
     <button
       onClick={onClick}
       className={cn(
-        'press shrink-0 rounded-full border px-3.5 py-1.5 text-sm whitespace-nowrap transition-colors',
+        'press shrink-0 rounded-full border px-3.5 py-2 text-sm whitespace-nowrap transition-colors',
         active ? 'border-gold/60 bg-gold/12 text-gold' : 'border-line bg-surface text-ivory-dim active:bg-raised',
       )}
     >

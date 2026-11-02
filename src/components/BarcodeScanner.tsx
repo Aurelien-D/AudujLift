@@ -4,7 +4,7 @@ import { cn } from '../lib/utils'
 import { Button, inputClass, Sheet } from './ui'
 
 interface NativeDetector {
-  detect(source: HTMLVideoElement): Promise<{ rawValue: string }[]>
+  detect(source: HTMLVideoElement | HTMLImageElement): Promise<{ rawValue: string }[]>
 }
 declare global {
   interface Window {

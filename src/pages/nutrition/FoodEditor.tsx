@@ -74,14 +74,17 @@ export default function FoodEditor() {
   const [filled, setFilled] = useState<Set<string>>(new Set())
 
   useEffect(() => {
+    const num = (k: string) => Math.max(0, Number(params.get(k)) || 0)
     if (id) db.foods.get(id).then((f) => setFood(f ?? null))
     else
       setFood({
         id: uid(),
         source: 'custom',
         barcode: params.get('barcode') ?? undefined,
-        name: '',
-        per100: { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+        // Pré-remplissage depuis « Photo du produit » (nom, marque et valeurs lues par l'IA)
+        name: params.get('name') ?? '',
+        brand: params.get('brand') || undefined,
+        per100: { kcal: num('kcal'), protein: num('protein'), carbs: num('carbs'), fat: num('fat') },
         unit: 'g',
         photos: [],
         createdAt: Date.now(),

@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Camera, ChefHat, Loader2, PenLine, ScanBarcode, Search, ShoppingCart, Sparkles, Star, Trash2, Utensils, Zap } from 'lucide-react'
+import { ChefHat, Loader2, Package, PenLine, ScanBarcode, Search, ShoppingCart, Sparkles, Star, Trash2, Utensils, Zap } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BarcodeScanner } from '../../components/BarcodeScanner'
@@ -30,12 +30,14 @@ export function NutriScore({ grade }: { grade?: string }) {
 }
 
 export function FoodRow({ food, onClick }: { food: Food; onClick: () => void }) {
-  const img = food.imageUrl || food.photos?.find(Boolean)
+  // Photo injoignable (hors connexion) : icône neutre plutôt qu'une image cassée
+  const [broken, setBroken] = useState(false)
+  const img = broken ? undefined : food.imageUrl || food.photos?.find(Boolean)
   return (
     <button onClick={onClick} className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left active:bg-raised">
       <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised">
         {img ? (
-          <img src={img} alt="" loading="lazy" className="size-full object-cover" />
+          <img src={img} alt="" loading="lazy" onError={() => setBroken(true)} className="size-full object-cover" />
         ) : food.recipe ? (
           <ChefHat size={18} strokeWidth={1.75} className="text-gold" />
         ) : (
@@ -179,21 +181,27 @@ export default function AddFood() {
         />
       </div>
 
-      <div className="mt-3 grid grid-cols-4 gap-2">
+      <div className="mt-3 grid grid-cols-5 gap-1.5">
         <button onClick={() => setScan(true)} className="press flex flex-col items-center gap-1.5 rounded-2xl bg-gold py-3 text-[11px] font-semibold text-ink active:bg-gold-pale">
           <ScanBarcode size={22} /> Scanner
+        </button>
+        <button
+          onClick={() => navigate(`/nutrition/product-photo?${ctx}`)}
+          className="press flex flex-col items-center gap-1.5 rounded-2xl border border-gold/40 bg-surface py-3 text-[11px] font-medium text-ivory active:bg-raised"
+        >
+          <Package size={22} className="text-gold" /> Produit
         </button>
         <button
           onClick={() => navigate(`/nutrition/photo?${ctx}`)}
           className="press flex flex-col items-center gap-1.5 rounded-2xl border border-gold/40 bg-surface py-3 text-[11px] font-medium text-ivory active:bg-raised"
         >
-          <Sparkles size={22} className="text-gold" /> Assiette IA
+          <Sparkles size={22} className="text-gold" /> Assiette
         </button>
         <button
           onClick={() => navigate(`/nutrition/food/new?${ctx}`)}
           className="press flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-surface py-3 text-[11px] font-medium text-ivory active:bg-raised"
         >
-          <Camera size={22} className="text-gold" /> Créer
+          <PenLine size={22} className="text-gold" /> Créer
         </button>
         <button
           onClick={() => setQuick(true)}

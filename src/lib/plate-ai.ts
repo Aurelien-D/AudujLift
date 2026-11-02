@@ -149,8 +149,14 @@ export function parsePlateResponse(text: string): PlateAnalysis {
   return { items, note: raw.note?.trim() ?? '' }
 }
 
-/** Envoie la photo (data URL JPEG) à Claude et renvoie les aliments reconnus. */
-export async function analyzePlate(dataUrl: string, apiKey: string, signal?: AbortSignal): Promise<PlateAnalysis> {
+/** Envoie une photo (data URL) à Claude avec une consigne et un schéma JSON ; renvoie le JSON de la réponse.
+ *  Partagé par l'analyse d'assiette et la reconnaissance de produit. */
+export async function askVision(
+  dataUrl: string,
+  apiKey: string,
+  opts: { system: string; schema: Record<string, unknown>; prompt: string; effort: 'low' | 'medium' },
+  signal?: AbortSignal,
+): Promise<string> {
   const { default: AnthropicSDK } = await import('@anthropic-ai/sdk')
   // Appel direct depuis le navigateur : la clé appartient à l'utilisateur et reste sur son appareil
   const client = new AnthropicSDK({ apiKey, dangerouslyAllowBrowser: true, maxRetries: 1 })
@@ -166,14 +172,14 @@ export async function analyzePlate(dataUrl: string, apiKey: string, signal?: Abo
         // En cas de refus par un filtre de sécurité, l'API relance la requête sur le modèle de secours conseillé
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
-        output_config: { effort: 'medium', format: { type: 'json_schema', schema: PLATE_SCHEMA } },
-        system: SYSTEM,
+        output_config: { effort: opts.effort, format: { type: 'json_schema', schema: opts.schema } },
+        system: opts.system,
         messages: [
           {
             role: 'user',
             content: [
               { type: 'image', source: { type: 'base64', media_type: media_type as 'image/jpeg', data } },
-              { type: 'text', text: 'Analyse ce repas.' },
+              { type: 'text', text: opts.prompt },
             ],
           },
         ],
@@ -196,7 +202,12 @@ export async function analyzePlate(dataUrl: string, apiKey: string, signal?: Abo
   if (res.stop_reason === 'max_tokens') throw new Error('Réponse incomplète : réessaie.')
   const text = res.content.find((b) => b.type === 'text')
   if (!text || text.type !== 'text') throw new Error('Réponse vide : réessaie.')
-  return parsePlateResponse(text.text)
+  return text.text
+}
+
+/** Envoie la photo (data URL JPEG) à Claude et renvoie les aliments reconnus. */
+export async function analyzePlate(dataUrl: string, apiKey: string, signal?: AbortSignal): Promise<PlateAnalysis> {
+  return parsePlateResponse(await askVision(dataUrl, apiKey, { system: SYSTEM, schema: PLATE_SCHEMA, prompt: 'Analyse ce repas.', effort: 'medium' }, signal))
 }
 
 /**

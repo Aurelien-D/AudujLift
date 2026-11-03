@@ -33,15 +33,23 @@ def r(x):
 
 
 def reconcile_energy(kcal, kj, prot, carbs, fat, fiber):
-    """Même règle que src/lib/nutrition-quality.ts : kcal et kJ contradictoires sur la fiche (erreur de saisie
-    fréquente) -> on garde la valeur cohérente avec les macros."""
+    """Même règle que reconcileEnergy (src/lib/nutrition-quality.ts) : kcal et kJ contradictoires -> correction
+    seulement dans les cas sûrs (kJ cohérents avec les macros ; kcal trop basses, ou impossibles même si les macros
+    avaient été saisies pour une portion). Sinon on garde les kcal de la fiche."""
     from_kj = kj / 4.184 if kj is not None else None
     if kcal is None or from_kj is None:
         return kcal if kcal is not None else from_kj
     if abs(kcal - from_kj) <= max(5, 0.1 * max(kcal, from_kj)):
         return kcal
-    calc = 4 * (prot or 0) + 4 * (carbs or 0) + 9 * (fat or 0) + 2 * (fiber or 0)
-    return kcal if abs(kcal - calc) <= abs(from_kj - calc) else from_kj
+    p, c, f, fi = prot or 0, carbs or 0, fat or 0, fiber or 0
+    calc = 4 * p + 4 * c + 9 * f + 2 * fi
+    if abs(from_kj - calc) > max(15, 0.15 * max(from_kj, calc)):
+        return kcal
+    if kcal < from_kj:
+        return from_kj
+    mass = p + c + f + fi
+    max_possible = calc * 100 / mass if mass > 0 else 900
+    return from_kj if kcal > min(900, max_possible) else kcal
 
 
 def salt_of(n):

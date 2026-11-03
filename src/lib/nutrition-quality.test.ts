@@ -42,3 +42,17 @@ describe('cohérence des valeurs', () => {
     expect(nutritionIssues({ kcal: 206, protein: 0.2, carbs: 76, fat: 0.3 }, 'Chewing-gum sans sucres')).toEqual([])
   })
 })
+
+describe('correction prudente des calories', () => {
+  it('kcal hautes mais possibles (macros et kJ saisis pour une portion) : gardées', () => {
+    // Muesli : 437 kcal justes ; macros et kJ saisis pour 50 g
+    expect(reconcileEnergy(437, 916, { protein: 5, carbs: 30, fat: 7, fiber: 3 })).toBe(437)
+  })
+  it('kcal impossibles : corrigées avec les kJ', () => {
+    // Fromage frais 8 % : 765 kcal impossibles avec 20 g de nutriments pour 100 g
+    expect(reconcileEnergy(765, 552, { protein: 8, carbs: 4, fat: 8 })).toBeCloseTo(132, 0)
+  })
+  it('kJ qui ne collent pas non plus avec les macros : kcal de la fiche gardées', () => {
+    expect(reconcileEnergy(300, 3000, { protein: 10, carbs: 50, fat: 5 })).toBe(300)
+  })
+})

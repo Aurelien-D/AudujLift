@@ -1,7 +1,8 @@
-import { ChevronLeft, ChevronRight, Trophy } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Sparkles, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, EmptyState, IconButton, Page, SectionTitle } from '../../components/ui'
+import { AiExportSheet } from '../../components/AiExportSheet'
+import { Button, Card, EmptyState, IconButton, Page, SectionTitle } from '../../components/ui'
 import { useDoneWorkouts, useExerciseMap } from '../../lib/hooks'
 import { detectPRs, workoutTotals } from '../../lib/stats'
 import type { Workout } from '../../lib/types'
@@ -75,6 +76,7 @@ export function MonthCalendar({ workouts, onDay }: { workouts: Workout[]; onDay?
 const weekdayFmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' })
 
 export default function History() {
+  const [aiExport, setAiExport] = useState(false)
   const navigate = useNavigate()
   const workouts = useDoneWorkouts()
   const exMap = useExerciseMap()
@@ -102,6 +104,12 @@ export default function History() {
   return (
     <Page title="Historique" back="/workouts">
       <MonthCalendar workouts={workouts ?? []} onDay={(w) => navigate(`/workouts/history/${w.id}`)} />
+      {!!workouts?.length && (
+        <Button variant="secondary" className="mt-3 w-full" onClick={() => setAiExport(true)}>
+          <Sparkles size={18} className="text-gold" /> Analyser mes séances avec une IA
+        </Button>
+      )}
+      {aiExport && <AiExportSheet onClose={() => setAiExport(false)} />}
       {workouts?.length === 0 && (
         <div className="mt-4">
           <EmptyState title="Aucune séance enregistrée">Tes séances terminées apparaîtront ici, avec leurs records.</EmptyState>

@@ -1,8 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Clock, Flame, Loader2, Pencil, Repeat, Save, Share2, Trash2, Trophy } from 'lucide-react'
+import { Clock, Flame, Loader2, Pencil, Repeat, Save, Share2, Sparkles, Trash2, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ExerciseThumb } from '../../components/ExercisePicker'
+import { AiExportSheet } from '../../components/AiExportSheet'
 import { RankReveal } from '../../components/RankReveal'
 import { StravaPublish } from '../../components/StravaPublish'
 import { SolarSigil } from '../../components/SolarSigil'
@@ -38,6 +39,7 @@ export default function WorkoutDetail() {
   const [edit, setEdit] = useState<Workout | null>(null)
   const [routineSaved, setRoutineSaved] = useState(false)
   const [sharing, setSharing] = useState(false)
+  const [aiExport, setAiExport] = useState(false)
   // Fenêtre des rangs : une seule fois par séance terminée (pas à chaque retour sur le récap)
   const revealKey = `audujlift.rankReveal.${id}`
   const [reveal, setReveal] = useState(() => {
@@ -219,9 +221,14 @@ export default function WorkoutDetail() {
             </Button>
           </div>
           <StravaPublish workout={workout} exMap={exMap} prs={prs} summary />
-          <Button variant="tertiary" className="mt-1 w-full" onClick={share} disabled={sharing}>
-            {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Partager le récap
-          </Button>
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            <Button variant="tertiary" onClick={share} disabled={sharing}>
+              {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Partager le récap
+            </Button>
+            <Button variant="tertiary" onClick={() => setAiExport(true)}>
+              <Sparkles size={18} /> Analyser avec une IA
+            </Button>
+          </div>
         </>
       )}
 
@@ -282,10 +289,16 @@ export default function WorkoutDetail() {
 
       {!summary && !edit && <StravaPublish workout={workout} exMap={exMap} prs={prs} summary={false} />}
       {!summary && !edit && (
-        <Button variant="tertiary" className="mt-4 w-full" onClick={share} disabled={sharing}>
-          {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Partager le récap
-        </Button>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Button variant="tertiary" onClick={share} disabled={sharing}>
+            {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Partager le récap
+          </Button>
+          <Button variant="tertiary" onClick={() => setAiExport(true)}>
+            <Sparkles size={18} /> Analyser avec une IA
+          </Button>
+        </div>
       )}
+      {aiExport && <AiExportSheet workout={workout} onClose={() => setAiExport(false)} />}
       {!summary && (
         <div className="mt-2 grid grid-cols-2 gap-2">
           <Button variant="secondary" onClick={saveAsRoutine} disabled={routineSaved}>

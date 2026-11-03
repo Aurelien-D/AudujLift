@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChefHat, Loader2, Package, PenLine, ScanBarcode, Search, ShoppingCart, Sparkles, Star, Trash2, Utensils, Zap } from 'lucide-react'
+import { AlertTriangle, ChefHat, Loader2, Package, PenLine, ScanBarcode, Search, ShoppingCart, Sparkles, Star, Trash2, Utensils, Zap } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BarcodeScanner } from '../../components/BarcodeScanner'
@@ -13,6 +13,7 @@ import { searchProducts } from '../../lib/off'
 import { searchPopularProducts } from '../../lib/offline-products'
 import type { Food, Meal, SavedMeal } from '../../lib/types'
 import { cn, normalize, toISODate, uid } from '../../lib/utils'
+import { nutritionIssues } from '../../lib/nutrition-quality'
 
 export function defaultMeal(): Meal {
   const h = new Date().getHours()
@@ -48,6 +49,9 @@ export function FoodRow({ food, onClick }: { food: Food; onClick: () => void }) 
         <div className="flex items-center gap-1.5">
           <span className="truncate font-medium">{food.name}</span>
           {food.favorite && <Star size={12} className="shrink-0 fill-gold text-gold" />}
+          {food.source !== 'ciqual' && !food.recipe && nutritionIssues(food.per100, food.name).length > 0 && (
+            <AlertTriangle size={12} className="shrink-0 text-warn" aria-label="Valeurs à vérifier" />
+          )}
         </div>
         <div className="truncate text-xs text-silver">
           {food.brand ? `${food.brand} · ` : ''}

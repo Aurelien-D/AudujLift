@@ -2,6 +2,7 @@
 // Doc : https://openfoodfacts.github.io/openfoodfacts-server/api/
 import type { Food, Nutrients } from './types'
 import { normalize, uid } from './utils'
+import { reconcileEnergy, SALT_PER_SODIUM } from './nutrition-quality'
 
 const FIELDS = [
   'code',
@@ -39,20 +40,24 @@ const num = (v: unknown): number | undefined => {
 }
 
 export function offNutrients(n: OffProduct['nutriments'] = {}): Nutrients | undefined {
-  let kcal = num(n['energy-kcal_100g'])
-  if (kcal == null) {
-    const kj = num(n['energy-kj_100g']) ?? num(n['energy_100g'])
-    if (kj != null) kcal = kj / 4.184
-  }
   const protein = num(n['proteins_100g'])
   const carbs = num(n['carbohydrates_100g'])
   const fat = num(n['fat_100g'])
+  // kcal et kJ contradictoires sur la fiche : on garde la valeur cohérente avec les macros
+  const kcal = reconcileEnergy(num(n['energy-kcal_100g']), num(n['energy-kj_100g']) ?? num(n['energy_100g']), {
+    protein: protein ?? 0,
+    carbs: carbs ?? 0,
+    fat: fat ?? 0,
+    fiber: num(n['fiber_100g']),
+  })
   if (kcal == null && protein == null && carbs == null && fat == null) return undefined
   const out: Nutrients = { kcal: kcal ?? 0, protein: protein ?? 0, carbs: carbs ?? 0, fat: fat ?? 0 }
   const sugar = num(n['sugars_100g'])
   const fiber = num(n['fiber_100g'])
   const sat = num(n['saturated-fat_100g'])
-  const salt = num(n['salt_100g'])
+  // Sel en priorité ; à défaut, sodium converti (sel = sodium × 2,5), jamais l'un pour l'autre
+  const sodium = num(n['sodium_100g'])
+  const salt = num(n['salt_100g']) ?? (sodium != null ? sodium * SALT_PER_SODIUM : undefined)
   if (sugar != null) out.sugar = sugar
   if (fiber != null) out.fiber = fiber
   if (sat != null) out.saturatedFat = sat

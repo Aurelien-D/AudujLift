@@ -32,6 +32,26 @@ def r(x):
     return None if x is None else round(x, 2)
 
 
+def reconcile_energy(kcal, kj, prot, carbs, fat, fiber):
+    """Même règle que src/lib/nutrition-quality.ts : kcal et kJ contradictoires sur la fiche (erreur de saisie
+    fréquente) -> on garde la valeur cohérente avec les macros."""
+    from_kj = kj / 4.184 if kj is not None else None
+    if kcal is None or from_kj is None:
+        return kcal if kcal is not None else from_kj
+    if abs(kcal - from_kj) <= max(5, 0.1 * max(kcal, from_kj)):
+        return kcal
+    calc = 4 * (prot or 0) + 4 * (carbs or 0) + 9 * (fat or 0) + 2 * (fiber or 0)
+    return kcal if abs(kcal - calc) <= abs(from_kj - calc) else from_kj
+
+
+def salt_of(n):
+    """Sel en g/100 g ; à défaut, sodium x 2,5 (jamais l'un pour l'autre). Valeur impossible (> 100 g) écartée."""
+    salt = nutr(n, 'salt')
+    if salt is None and nutr(n, 'sodium') is not None:
+        salt = nutr(n, 'sodium') * 2.5
+    return salt if salt is None or 0 <= salt <= 100 else None
+
+
 for p in json.load(open(src)):
     code = (p.get('code') or '').strip()
     if not code.isdigit() or code in seen:
@@ -46,11 +66,8 @@ for p in json.load(open(src)):
     if not name or len(name) > 90:
         continue
     n = p.get('nutriments')
-    kcal = nutr(n, 'energy-kcal')
-    if kcal is None:
-        kj = nutr(n, 'energy-kj') or nutr(n, 'energy')
-        kcal = kj / 4.184 if kj is not None else None
     prot, carbs, fat = nutr(n, 'proteins'), nutr(n, 'carbohydrates'), nutr(n, 'fat')
+    kcal = reconcile_energy(nutr(n, 'energy-kcal'), nutr(n, 'energy-kj') or nutr(n, 'energy'), prot, carbs, fat, nutr(n, 'fiber'))
     if kcal is None or prot is None or carbs is None or fat is None:
         continue
     if not (0 <= kcal <= 950 and 0 <= prot <= 100 and 0 <= carbs <= 100 and 0 <= fat <= 100):
@@ -66,7 +83,7 @@ for p in json.load(open(src)):
     img = f"{p['front_key']}.{p['front_rev']}" if p.get('front_key') and p.get('front_rev') not in (None, 'None') else None
     seen.add(code)
     rows.append([code, name, brand, round(kcal), r(prot), r(carbs), r(fat), r(nutr(n, 'sugars')), r(nutr(n, 'fiber')),
-                 r(nutr(n, 'saturated-fat')), r(nutr(n, 'salt')), serving, unit, grade, img])
+                 r(nutr(n, 'saturated-fat')), r(salt_of(n)), serving, unit, grade, img])
     if len(rows) >= limit:
         break
 

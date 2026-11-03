@@ -8,6 +8,7 @@ import { kcalFromMacros } from '../../lib/nutrition'
 import { readNutritionLabel } from '../../lib/ocr'
 import type { Food, Nutrients } from '../../lib/types'
 import { cn, uid } from '../../lib/utils'
+import { nutritionIssues } from '../../lib/nutrition-quality'
 
 const FIELDS: { key: keyof Nutrients; label: string; indent?: boolean }[] = [
   { key: 'kcal', label: 'Énergie (kcal)' },
@@ -98,6 +99,7 @@ export default function FoodEditor() {
       </Page>
     )
 
+  const issues = nutritionIssues(food.per100, food.name)
   const set = (patch: Partial<Food>) => setFood({ ...food, ...patch })
   const photos = food.photos ?? []
   // photos[0] = paquet, photos[1] = étiquette ('' si absente)
@@ -263,10 +265,16 @@ export default function FoodEditor() {
             </div>
           ))}
         </div>
-        {food.per100.kcal > 0 && computedKcal > 0 && Math.abs(computedKcal - food.per100.kcal) / food.per100.kcal > 0.2 && (
-          <p className="mt-3 text-xs text-warn">
-            Attention : les macros donnent ~{computedKcal} kcal/100 {food.unit}, ce qui ne colle pas avec l'énergie saisie. Vérifie les valeurs.
-          </p>
+        <p className="mt-3 text-xs text-silver">Sel, pas sodium : si l'emballage n'indique que le sodium, multiplie-le par 2,5 (ex. 0,4 g de sodium = 1 g de sel).</p>
+        {food.per100.kcal > 0 && issues.length > 0 && (
+          <div className="mt-2 rounded-xl border border-warn/40 bg-warn/10 px-3 py-2 text-xs text-warn">
+            <div className="font-semibold">Valeurs à vérifier :</div>
+            <ul className="mt-0.5 list-disc pl-4">
+              {issues.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          </div>
         )}
       </Card>
 

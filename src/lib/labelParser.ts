@@ -1,4 +1,5 @@
 // Extraction des valeurs nutritionnelles depuis le texte OCR d'une étiquette (FR / EN).
+import { SALT_PER_SODIUM } from './nutrition-quality'
 import type { Nutrients } from './types'
 
 export type ParsedLabel = Partial<Nutrients>
@@ -60,7 +61,14 @@ export function parseNutritionLabel(raw: string): ParsedLabel {
   out.sugar = after(lines, /(sucres|sugars)/)
   out.fiber = after(lines, /(fibres?( alimentaires)?|fibre)/)
   out.protein = after(lines, /(proteines|protein)/)
-  out.salt = after(lines, /\b(sel|salt)\b/)
+  out.salt = after(lines, /\b(sel|salt)\b/, /\bsels? mineraux\b/)
+  // Étiquette qui n'indique que le sodium (anciennes étiquettes, produits importés) : converti en sel, jamais
+  // recopié tel quel (sel = sodium × 2,5 ; « mg » ramené en grammes)
+  if (out.salt == null) {
+    const line = lines.find((l) => /\bsodium\b/.test(l))
+    const sodium = line ? after([line], /\bsodium\b/) : undefined
+    if (sodium != null) out.salt = Math.round((/\d\s*mg\b/.test(line!) ? sodium / 1000 : sodium) * SALT_PER_SODIUM * 100) / 100
+  }
 
   for (const k of Object.keys(out) as (keyof ParsedLabel)[]) if (out[k] == null) delete out[k]
   return fixImplausible(out)

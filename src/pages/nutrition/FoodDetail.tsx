@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChefHat, Minus, Pencil, Plus, ShoppingCart, Star, Trash2 } from 'lucide-react'
+import { AlertTriangle, ChefHat, Minus, Pencil, Plus, ShoppingCart, Star, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Button, Card, Chip, IconButton, NumberInput, Page, Ring } from '../../components/ui'
@@ -13,6 +13,7 @@ import type { Food, Meal, Nutrients } from '../../lib/types'
 import { cn, formatNumber, toISODate } from '../../lib/utils'
 import { defaultMeal, NutriScore } from './AddFood'
 import { OffContribute } from './OffContribute'
+import { nutritionIssues } from '../../lib/nutrition-quality'
 
 const ROWS: { key: keyof Nutrients; label: string; unit: string; indent?: boolean }[] = [
   { key: 'kcal', label: 'Énergie', unit: 'kcal' },
@@ -66,6 +67,8 @@ export default function FoodDetail() {
     navigate(-1)
   }
 
+  // Ciqual (ANSES) fait référence ; les fiches collaboratives et les saisies manuelles sont contrôlées
+  const issues = food.source === 'ciqual' || food.recipe ? [] : nutritionIssues(food.per100, food.name)
   const presets = [...(food.servingSize ? [food.servingSize] : []), 50, 100, 150, 200, 250].filter((v, i, a) => a.indexOf(v) === i)
 
   return (
@@ -111,6 +114,28 @@ export default function FoodDetail() {
           </div>
         </div>
       </Card>
+
+      {issues.length > 0 && (
+        <Card className="mt-3 border-warn/40">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0 text-warn" />
+            <div className="min-w-0 flex-1 text-sm">
+              <div className="font-semibold text-warn">Valeurs à vérifier</div>
+              <ul className="mt-1 list-disc pl-4 text-xs text-silver">
+                {issues.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+              <p className="mt-1.5 text-xs text-silver">
+                {food.source === 'off' ? 'Fiche Open Food Facts saisie par des bénévoles : compare avec l’emballage.' : 'Compare avec l’emballage.'}
+              </p>
+              <Button variant="secondary" size="sm" className="mt-2" onClick={() => navigate(`/nutrition/food/${food.id}/edit`)}>
+                <Pencil size={15} /> Corriger les valeurs
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <Card className="mt-3">
         <div className="flex items-end gap-2">
